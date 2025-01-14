@@ -4,7 +4,10 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npx tsc -w\"  \"cross-env NODE_ENV=env nodemon dist/server.js\"",
+    "prod": "cross-env NODE_ENV=prod node ./dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -18,15 +21,23 @@
     "http-errors": "^2.0.0",
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
+    "strftime": "^0.10.3",
+    "uuid": "^11.0.5",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/mongoose": "^5.11.96",
+    "@types/morgan": "^1.9.9",
     "@types/node": "^22.10.6",
+    "@types/strftime": "^0.9.8",
+    "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
+    "dotenv-cli": "^8.0.0",
+    "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }
