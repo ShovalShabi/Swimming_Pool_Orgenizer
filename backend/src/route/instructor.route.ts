@@ -43,6 +43,25 @@ const instructorController = new InstructorController();
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/StartAndEndTime'
+ *     NewInstructor:
+ *       type: object
+ *       required:
+ *         - name
+ *         - specialties
+ *         - availabilities
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "John Doe"
+ *         specialties:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["BACK_STROKE", "CHEST"]
+ *         availabilities:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/StartAndEndTime'
  */
 
 /**
@@ -56,7 +75,7 @@ const instructorController = new InstructorController();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Instructor'
+ *             $ref: '#/components/schemas/NewInstructor'
  *     responses:
  *       201:
  *         description: Instructor successfully registered
@@ -95,15 +114,15 @@ instructorRouter.get("/", async (req: Request, res: Response) => {
  *   get:
  *     summary: Get instructors by specialties
  *     tags: [Instructors]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: array
- *             items:
- *               type: string
- *             example: ["BACK_STROKE", "CHEST"]
+ *     parameters:
+ *       - in: query
+ *         name: specialties
+ *         required: true
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         example: ["BACK_STROKE", "CHEST"]
  *     responses:
  *       200:
  *         description: Successfully retrieved instructors with given specialties
@@ -114,7 +133,7 @@ instructorRouter.get("/", async (req: Request, res: Response) => {
  *               items:
  *                 $ref: '#/components/schemas/Instructor'
  */
-instructorRouter.post("/specialties", async (req: Request, res: Response) => {
+instructorRouter.get("/specialties", async (req: Request, res: Response) => {
   instructorController.getInstructorsBySpecialties(req, res);
 });
 
