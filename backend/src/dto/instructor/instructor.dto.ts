@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { IInstructor } from "../../model/instructor.model.js";
 import { Swimming } from "../../utils/swimming-enum.utils.js";
-import StartAndEndTime from "./start-and-end-time.dto.js";
+import StartAndEndTime, { Availability } from "./start-and-end-time.dto.js";
 
 // Instructor Class
 export default class Instructor {
@@ -9,7 +9,7 @@ export default class Instructor {
     public instructorId: string | null,
     public name: string,
     public specialties: Swimming[],
-    public availabilities: StartAndEndTime[] // always will be the size of 7 like the days of the week 0-Sunday, 1-Monday etc.
+    public availabilities: Availability[] // Size 7 (0-Sunday, 1-Monday, etc.)
   ) {}
 
   /**
@@ -22,8 +22,10 @@ export default class Instructor {
       instructorDoc._id?.toString() || null, // Convert `_id` to string or keep it null,
       instructorDoc.name,
       instructorDoc.specialties,
-      instructorDoc.availabilities.map(
-        (avail) => new StartAndEndTime(avail.startTimeUTC, avail.endTimeUTC)
+      instructorDoc.availabilities.map((avail) =>
+        typeof avail === "number"
+          ? -1
+          : new StartAndEndTime(avail.startTimeUTC, avail.endTimeUTC)
       )
     );
   }
@@ -36,10 +38,11 @@ export default class Instructor {
     const modelData: Partial<IInstructor> = {
       name: instructor.name,
       specialties: instructor.specialties,
-      availabilities: instructor.availabilities.map((avail) => ({
-        startTimeUTC: avail.startTimeUTC,
-        endTimeUTC: avail.endTimeUTC,
-      })),
+      availabilities: instructor.availabilities.map((avail) =>
+        typeof avail === "number"
+          ? -1
+          : { startTimeUTC: avail.startTimeUTC, endTimeUTC: avail.endTimeUTC }
+      ),
     };
 
     // If instructorId exists, set it as `_id` to ensure updates don't create new documents
