@@ -213,10 +213,6 @@ lessonRouter.get("/", async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: Lesson updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Lesson'
  */
 lessonRouter.put("/:lessonId", async (req: Request, res: Response) => {
   lessonController.updateLesson(req, res);
