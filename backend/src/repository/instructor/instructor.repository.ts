@@ -20,7 +20,7 @@ export default class InstructorRepository
   }
 
   async findById(instructorId: string): Promise<Instructor | null> {
-    const instructorDoc = await InstructorModel.findOne({ instructorId });
+    const instructorDoc = await InstructorModel.findOne({ _id: instructorId });
     return instructorDoc ? Instructor.fromModel(instructorDoc) : null;
   }
 
@@ -36,7 +36,7 @@ export default class InstructorRepository
     instructorData: Instructor
   ): Promise<Instructor | null> {
     const updatedInstructor = await InstructorModel.findOneAndUpdate(
-      { instructorId },
+      { _id: instructorId },
       Instructor.toModel(instructorData),
       { new: true }
     );
@@ -45,7 +45,7 @@ export default class InstructorRepository
   }
 
   async delete(instructorId: string): Promise<boolean> {
-    const result = await InstructorModel.deleteOne({ instructorId });
+    const result = await InstructorModel.deleteOne({ _id: instructorId });
     return result.deletedCount > 0;
   }
 
