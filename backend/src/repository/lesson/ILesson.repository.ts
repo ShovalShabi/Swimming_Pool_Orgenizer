@@ -5,10 +5,7 @@ export default interface LessonRepositoryInterface {
   createLesson(lessonData: NewLesson): Promise<Lesson>;
   getLessonById(lessonId: string): Promise<Lesson | null>;
   getAllLessons(start: Date, end: Date): Promise<Lesson[]>;
-  updateLesson(
-    lessonId: string,
-    lessonData: Partial<Lesson>
-  ): Promise<Lesson | null>;
+  updateLesson(lessonId: string, lessonData: Partial<Lesson>): Promise<boolean>;
   deleteLesson(lessonId: string): Promise<boolean>;
   deleteAllLessons(): Promise<boolean>;
 }
