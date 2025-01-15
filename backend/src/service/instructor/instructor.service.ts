@@ -35,6 +35,17 @@ export default class InstructorService implements InstructorServiceInterface {
    */
   async getInstructorsBySpecialties(specialties: Swimming[]) {
     //NOTE: specialties can be empty
+    // Validate each specialty against the Swimming enum
+    for (const specialty of specialties) {
+      if (!Object.values(Swimming).includes(specialty)) {
+        throw new createHttpError.BadRequest(
+          `Invalid specialty: ${specialty}. Must be one of: ${Object.values(
+            Swimming
+          ).join(", ")}`
+        );
+      }
+    }
+
     return this.instructorRepository.findBySpecialties(specialties);
   }
 
