@@ -25,7 +25,7 @@ export default class LessonService {
   async updateLesson(
     lessonId: string,
     lessonData: Partial<Lesson>
-  ): Promise<Lesson | null> {
+  ): Promise<boolean> {
     return this.lessonRepository.updateLesson(lessonId, lessonData);
   }
 
