@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { IInstructor } from "../../model/instructor.model.js";
 import { Swimming } from "../../utils/swimming-enum.utils.js";
 import StartAndEndTime from "./start-and-end-time.dto.js";
@@ -5,7 +6,7 @@ import StartAndEndTime from "./start-and-end-time.dto.js";
 // Instructor Class
 export default class Instructor {
   constructor(
-    public instructorId: string,
+    public instructorId: string | null,
     public name: string,
     public specialties: Swimming[],
     public availabilities: StartAndEndTime[] // always will be the size of 7 like the days of the week 0-Sunday, 1-Monday etc.
@@ -18,7 +19,7 @@ export default class Instructor {
    */
   static fromModel(instructorDoc: IInstructor): Instructor {
     return new Instructor(
-      instructorDoc.instructorId,
+      instructorDoc._id?.toString() || null, // Convert `_id` to string or keep it null,
       instructorDoc.name,
       instructorDoc.specialties,
       instructorDoc.availabilities.map(
@@ -28,12 +29,11 @@ export default class Instructor {
   }
 
   /**
-   * Convert Instructor DTO to Mongoose Model (IInstructor)
-   * @returns Plain object matching IInstructor
+   * Convert Instructor DTO to Plain Object for Mongoose Model
+   * @returns Plain object for Mongoose Model (IInstructor)
    */
   static toModel(instructor: Instructor): Partial<IInstructor> {
-    return {
-      instructorId: instructor.instructorId,
+    const modelData: Partial<IInstructor> = {
       name: instructor.name,
       specialties: instructor.specialties,
       availabilities: instructor.availabilities.map((avail) => ({
@@ -41,5 +41,12 @@ export default class Instructor {
         endTimeUTC: avail.endTimeUTC,
       })),
     };
+
+    // If instructorId exists, set it as `_id` to ensure updates don't create new documents
+    if (instructor.instructorId) {
+      modelData._id = new mongoose.Types.ObjectId(instructor.instructorId);
+    }
+
+    return modelData;
   }
 }
