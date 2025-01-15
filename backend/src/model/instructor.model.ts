@@ -1,13 +1,13 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import { Swimming } from "../utils/swimming-enum.utils.js";
-import StartAndEndTime from "../dto/instructor/start-and-end-time.dto.js";
+import { Availability } from "../dto/instructor/start-and-end-time.dto.js";
 
 // Interface for Mongoose Schema
 export interface IInstructor extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   specialties: Swimming[];
-  availabilities: StartAndEndTime[];
+  availabilities: Availability[];
 }
 
 // Define the Instructor Schema
@@ -19,12 +19,40 @@ const InstructorSchema = new Schema<IInstructor>(
       enum: Object.values(Swimming),
       required: true,
     },
-    availabilities: [
-      {
-        startTimeUTC: { type: Number, required: true },
-        endTimeUTC: { type: Number, required: true },
+    availabilities: {
+      type: [
+        {
+          type: Schema.Types.Mixed, // Allows `-1` or an object
+          validate: {
+            validator: function (value: any): boolean {
+              if (value === -1) return true; // `-1` is valid
+              if (
+                typeof value === "object" &&
+                typeof value.startTimeUTC === "number" &&
+                typeof value.endTimeUTC === "number"
+              ) {
+                return (
+                  value.startTimeUTC >= 0 &&
+                  value.startTimeUTC <= 23 &&
+                  value.endTimeUTC >= 0 &&
+                  value.endTimeUTC <= 23 &&
+                  value.startTimeUTC <= value.endTimeUTC
+                );
+              }
+              return false;
+            },
+            message:
+              "Availability must be either -1 (unavailable) or an object with valid startTimeUTC and endTimeUTC.",
+          },
+        },
+      ],
+      validate: {
+        validator: (arr: any[]): boolean => arr.length === 7,
+        message:
+          "Availabilities must have exactly 7 entries (one for each day of the week).",
       },
-    ],
+      required: true,
+    },
   },
   { timestamps: true }
 );
