@@ -36,6 +36,8 @@ export const PORT: number = parseInt(process.env.PORT || "6001", 10);
 // Log the port number being used by the server
 logger.info(`Server Port: ${PORT}`);
 
+export const serverURL: string = `http://localhost:${PORT}`;
+
 /**
  * Constant: MONGO_HOST_TYPE
  * Description: Represents the type of the host (dockerized or localhost).
