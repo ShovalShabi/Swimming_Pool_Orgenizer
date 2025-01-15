@@ -4,7 +4,7 @@ import StartAndEndTime from "../dto/instructor/start-and-end-time.dto.js";
 
 // Interface for Mongoose Schema
 export interface IInstructor extends Document {
-  instructorId: string;
+  _id: mongoose.Types.ObjectId;
   name: string;
   specialties: Swimming[];
   availabilities: StartAndEndTime[];
@@ -13,7 +13,6 @@ export interface IInstructor extends Document {
 // Define the Instructor Schema
 const InstructorSchema = new Schema<IInstructor>(
   {
-    instructorId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     specialties: {
       type: [String],
