@@ -92,10 +92,12 @@ export const createCustomLogger = (options: CreateLoggerOptions): Logger => {
   return createLogger({
     level: logLevel,
     format: combine(
-      timestamp(),
-      printf(({ level, message, timestamp, moduleFilename }) => {
-        return `[${moduleFilename}] [${timestamp}] ${level.toUpperCase()}: ${message}`;
-      })
+      timestamp(), // Add timestamp to logs
+      format((info) => {
+        info.moduleFilename = moduleFilename;
+        return info;
+      })(), // Add filename to logs
+      logFormat // Apply custom log format
     ),
     transports: transportsArray,
   });
