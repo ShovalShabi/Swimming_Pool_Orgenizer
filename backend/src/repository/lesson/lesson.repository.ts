@@ -4,38 +4,74 @@ import LessonModel, { ILesson } from "../../model/lesson.model.js";
 import LessonRepositoryInterface from "./ILesson.repository.js";
 
 export default class LessonRepository implements LessonRepositoryInterface {
+  /**
+   * Creates a new lesson and returns it as a Lesson DTO.
+   * @param lessonData NewLesson DTO
+   * @returns Created Lesson DTO
+   */
   async createLesson(lessonData: NewLesson): Promise<Lesson> {
-    const lesson = new LessonModel(lessonData);
-    const savedLesson: ILesson = await lesson.save();
-    return savedLesson.toObject();
+    const lessonModel = new LessonModel(lessonData);
+    const savedLesson: ILesson = await lessonModel.save();
+    return Lesson.fromModel(savedLesson);
   }
 
+  /**
+   * Retrieves a lesson by its ID.
+   * @param lessonId Lesson ID (UUID)
+   * @returns Lesson DTO if found, otherwise null
+   */
   async getLessonById(lessonId: string): Promise<Lesson | null> {
-    return LessonModel.findById(lessonId).lean().exec();
+    const lessonDoc = await LessonModel.findOne({ lessonId }).exec();
+    return lessonDoc ? Lesson.fromModel(lessonDoc) : null;
   }
 
+  /**
+   * Retrieves all lessons within a date range.
+   * @param start Start Date
+   * @param end End Date
+   * @returns Array of Lesson DTOs
+   */
   async getAllLessons(start: Date, end: Date): Promise<Lesson[]> {
-    return LessonModel.find({ dateAndTime: { $gte: start, $lte: end } })
-      .lean()
-      .exec();
+    const lessonDocs = await LessonModel.find({
+      dateAndTime: { $gte: start, $lte: end },
+    }).exec();
+    return lessonDocs.map(Lesson.fromModel);
   }
 
+  /**
+   * Updates a lesson by its ID.
+   * @param lessonId Lesson ID
+   * @param lessonData Partial update of Lesson DTO
+   * @returns True if update was successful, otherwise false
+   */
   async updateLesson(
     lessonId: string,
     lessonData: Partial<Lesson>
-  ): Promise<Lesson | null> {
-    return LessonModel.findByIdAndUpdate(lessonId, lessonData, { new: true })
-      .lean()
-      .exec();
+  ): Promise<boolean> {
+    const updatedLesson = await LessonModel.findOneAndUpdate(
+      { lessonId },
+      lessonData,
+      { new: true }
+    ).exec();
+    return updatedLesson !== null;
   }
 
+  /**
+   * Deletes a lesson by its ID.
+   * @param lessonId Lesson ID
+   * @returns True if deletion was successful, otherwise false
+   */
   async deleteLesson(lessonId: string): Promise<boolean> {
-    const result = await LessonModel.findByIdAndDelete(lessonId).exec();
+    const result = await LessonModel.findOneAndDelete({ lessonId }).exec();
     return result !== null;
   }
 
+  /**
+   * Deletes all lessons from the database.
+   * @returns True if at least one lesson was deleted, otherwise false
+   */
   async deleteAllLessons(): Promise<boolean> {
     const result = await LessonModel.deleteMany({}).exec();
-    return result.acknowledged;
+    return result.deletedCount > 0;
   }
 }
