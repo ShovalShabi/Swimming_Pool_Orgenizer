@@ -5,3 +5,6 @@ export default class StartAndEndTime {
     public endTimeUTC: number // e.g., 17 for 17:00 UTC
   ) {}
 }
+
+// Availability Type
+export type Availability = -1 | StartAndEndTime;
