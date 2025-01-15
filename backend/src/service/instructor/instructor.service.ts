@@ -111,24 +111,33 @@ export default class InstructorService implements InstructorServiceInterface {
       throw new createHttpError.BadRequest("Instructor name cannot be empty.");
     }
 
+    let numDays = 0;
     // Validate each availability entry
     for (const availability of instructorData.availabilities) {
-      if (availability.startTimeUTC < 0 || availability.startTimeUTC > 23) {
-        throw new createHttpError.BadRequest(
-          `Invalid start time (${availability.startTimeUTC}). Must be between 0 and 23.`
-        );
-      }
-      if (availability.endTimeUTC < 0 || availability.endTimeUTC > 23) {
-        throw new createHttpError.BadRequest(
-          `Invalid end time (${availability.endTimeUTC}). Must be between 0 and 23.`
-        );
-      }
-      if (availability.startTimeUTC > availability.endTimeUTC) {
-        throw new createHttpError.BadRequest(
-          `Start time (${availability.startTimeUTC}) cannot be greater than end time (${availability.endTimeUTC}).`
-        );
+      if (typeof availability === "object") {
+        numDays++; // That means that thre is availability
+        if (availability.startTimeUTC < 0 || availability.startTimeUTC > 23) {
+          throw new createHttpError.BadRequest(
+            `Invalid start time (${availability.startTimeUTC}). Must be between 0 and 23.`
+          );
+        }
+        if (availability.endTimeUTC < 0 || availability.endTimeUTC > 23) {
+          throw new createHttpError.BadRequest(
+            `Invalid end time (${availability.endTimeUTC}). Must be between 0 and 23.`
+          );
+        }
+        if (availability.startTimeUTC > availability.endTimeUTC) {
+          throw new createHttpError.BadRequest(
+            `Start time (${availability.startTimeUTC}) cannot be greater than end time (${availability.endTimeUTC}).`
+          );
+        }
       }
     }
+
+    if (numDays === 0)
+      throw new createHttpError.BadRequest(
+        "Instructor must have some availability during the week."
+      );
 
     // Validate each specialty against the Swimming enum
     for (const specialty of instructorData.specialties) {
