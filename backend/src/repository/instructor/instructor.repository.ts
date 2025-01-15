@@ -26,7 +26,7 @@ export default class InstructorRepository
 
   async findBySpecialties(specialties: Swimming[]): Promise<Instructor[]> {
     const instructorDocs = await InstructorModel.find({
-      specialties: { $in: specialties },
+      specialties: { $all: specialties },
     });
     return instructorDocs.map((doc) => Instructor.fromModel(doc));
   }
