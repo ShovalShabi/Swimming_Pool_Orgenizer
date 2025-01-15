@@ -7,7 +7,6 @@ export default class NewLesson {
   constructor(
     public typeLesson: LessonType,
     public specialties: Swimming[],
-    public instructorId: string,
     public dateAndTime: Date,
     public duration: number,
     public students: Student[]
