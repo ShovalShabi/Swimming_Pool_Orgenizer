@@ -25,6 +25,15 @@ const instructorController = new InstructorController();
  *         endTimeUTC:
  *           type: number
  *           example: 17
+ *     Availability:
+ *       type: array
+ *       items:
+ *         oneOf:
+ *           - type: integer
+ *             example: -1
+ *           - $ref: '#/components/schemas/StartAndEndTime'
+ *       description: Array of 7 entries where -1 indicates unavailability for that day.
+ *       example: [-1, -1, { "startTimeUTC": 9, "endTimeUTC": 17 }, -1, -1, -1, -1]
  *     Instructor:
  *       type: object
  *       properties:
@@ -40,9 +49,7 @@ const instructorController = new InstructorController();
  *             type: string
  *           example: ["BACK_STROKE", "CHEST"]
  *         availabilities:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/StartAndEndTime'
+ *           $ref: '#/components/schemas/Availability'
  *     NewInstructor:
  *       type: object
  *       required:
@@ -59,9 +66,7 @@ const instructorController = new InstructorController();
  *             type: string
  *           example: ["BACK_STROKE", "CHEST"]
  *         availabilities:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/StartAndEndTime'
+ *           $ref: '#/components/schemas/Availability'
  */
 
 /**
