@@ -1,11 +1,12 @@
 import createHttpError from "http-errors";
-import NewInstructor from "../dto/instructor/new-instructor.dto.js";
-import InstructorRepositoryInterface from "../repository/instructor/IInstructor.repository.js";
-import InstructorRepository from "../repository/instructor/instructor.repository.js";
-import { Swimming } from "../utils/swimming-enum.utils.js";
-import Instructor from "../dto/instructor/instructor.dto.js";
+import Instructor from "../../dto/instructor/instructor.dto.js";
+import NewInstructor from "../../dto/instructor/new-instructor.dto.js";
+import InstructorRepositoryInterface from "../../repository/instructor/IInstructor.repository.js";
+import InstructorRepository from "../../repository/instructor/instructor.repository.js";
+import { Swimming } from "../../utils/swimming-enum.utils.js";
+import InstructorServiceInterface from "./IInstructor.service.js";
 
-export default class InstructorService {
+export default class InstructorService implements InstructorServiceInterface {
   private instructorRepository: InstructorRepositoryInterface;
 
   constructor() {

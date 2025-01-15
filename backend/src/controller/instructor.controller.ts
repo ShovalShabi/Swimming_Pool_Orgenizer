@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import InstructorService from "../service/instructor.service.js";
+import InstructorService from "../service/instructor/instructor.service.js";
 import { Swimming } from "../utils/swimming-enum.utils.js";
 import Instructor from "../dto/instructor/instructor.dto.js";
 import NewInstructor from "../dto/instructor/new-instructor.dto.js";
+import InstructorServiceInterface from "../service/instructor/IInstructor.service.js";
 
 export default class InstructorController {
-  private instructorService: InstructorService;
+  private instructorService: InstructorServiceInterface;
 
   constructor() {
     this.instructorService = new InstructorService();
