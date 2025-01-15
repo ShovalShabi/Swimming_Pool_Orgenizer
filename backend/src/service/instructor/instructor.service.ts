@@ -49,6 +49,37 @@ export default class InstructorService implements InstructorServiceInterface {
     return this.instructorRepository.findBySpecialties(specialties);
   }
 
+  async getInstructorsByAvailability(
+    day: number,
+    startTimeUTC: number,
+    endTimeUTC: number
+  ) {
+    if (isNaN(day) || day < 0 || day > 6)
+      throw new createHttpError.BadRequest(
+        "Invalid day. Must be between 0 and 6."
+      );
+
+    if (
+      isNaN(startTimeUTC) ||
+      startTimeUTC < 0 ||
+      startTimeUTC > 23 ||
+      isNaN(endTimeUTC) ||
+      endTimeUTC < 0 ||
+      endTimeUTC > 23 ||
+      startTimeUTC > endTimeUTC
+    ) {
+      throw new createHttpError.BadRequest(
+        "Invalid time range. Ensure 0 <= startTimeUTC <= endTimeUTC <= 23."
+      );
+    }
+
+    return this.instructorRepository.findAvailableInstructors(
+      day,
+      startTimeUTC,
+      endTimeUTC
+    );
+  }
+
   async getInstructorById(instructorId: string) {
     const instructor = await this.instructorRepository.findById(instructorId);
 

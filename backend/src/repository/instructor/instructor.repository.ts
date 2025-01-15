@@ -31,6 +31,22 @@ export default class InstructorRepository
     return instructorDocs.map((doc) => Instructor.fromModel(doc));
   }
 
+  async findAvailableInstructors(
+    day: number,
+    startTimeUTC: number,
+    endTimeUTC: number
+  ): Promise<Instructor[]> {
+    const instructorDocs = await InstructorModel.find({
+      [`availabilities.${day}`]: {
+        $not: { $eq: -1 }, // Ensure the day is not -1 (instructor is available)
+      },
+      [`availabilities.${day}.startTimeUTC`]: { $lte: startTimeUTC }, // Instructor's start time is earlier or equal to the requested start time
+      [`availabilities.${day}.endTimeUTC`]: { $gte: endTimeUTC }, // Instructor's end time is later or equal to the requested end time
+    });
+
+    return instructorDocs.map((doc) => Instructor.fromModel(doc));
+  }
+
   async update(
     instructorId: string,
     instructorData: Instructor

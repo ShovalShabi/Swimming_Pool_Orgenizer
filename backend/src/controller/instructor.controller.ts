@@ -60,6 +60,28 @@ export default class InstructorController {
     }
   }
 
+  async getInstructorsByAvailability(
+    req: Request,
+    res: Response
+  ): Promise<Response> {
+    try {
+      const day: number = parseInt(req.query.day as string);
+      const startTimeUTC: number = parseInt(req.query.startTimeUTC as string);
+      const endTimeUTC: number = parseInt(req.query.endTimeUTC as string);
+
+      const instructors: Instructor[] =
+        await this.instructorService.getInstructorsByAvailability(
+          day,
+          startTimeUTC,
+          endTimeUTC
+        );
+
+      return res.status(200).json(instructors);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   async getInstructorById(req: Request, res: Response): Promise<Response> {
     try {
       const { instructorId } = req.params;

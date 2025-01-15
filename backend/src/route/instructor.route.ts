@@ -144,6 +144,48 @@ instructorRouter.get("/specialties", async (req: Request, res: Response) => {
 
 /**
  * @swagger
+ * /instructor/availability:
+ *   get:
+ *     summary: Get instructors available on a specific day and time
+ *     tags: [Instructors]
+ *     parameters:
+ *       - in: query
+ *         name: day
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: Day of the week (0 for Sunday, 6 for Saturday)
+ *           example: 2
+ *       - in: query
+ *         name: startTimeUTC
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: Start time in UTC (0-23)
+ *           example: 9
+ *       - in: query
+ *         name: endTimeUTC
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: End time in UTC (0-23)
+ *           example: 17
+ *     responses:
+ *       200:
+ *         description: List of instructors available
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Instructor'
+ */
+instructorRouter.get("/availability", async (req: Request, res: Response) => {
+  instructorController.getInstructorsByAvailability(req, res);
+});
+
+/**
+ * @swagger
  * /instructor/single/{instructorId}:
  *   get:
  *     summary: Get an instructor by ID

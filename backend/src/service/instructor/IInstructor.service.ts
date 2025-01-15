@@ -6,6 +6,11 @@ export default interface InstructorServiceInterface {
   createInstructor(instructorData: NewInstructor): Promise<Instructor>;
   getAllInstructors(): Promise<Instructor[]>;
   getInstructorsBySpecialties(specialties: Swimming[]): Promise<Instructor[]>;
+  getInstructorsByAvailability(
+    day: number,
+    startTimeUTC: number,
+    endTimeUTC: number
+  ): Promise<Instructor[]>;
   getInstructorById(instructorId: string): Promise<Instructor>;
   updateInstructor(
     instructorId: string,

@@ -6,6 +6,11 @@ export default interface InstructorRepositoryInterface {
   findAll(): Promise<Instructor[]>;
   findById(instructorId: string): Promise<Instructor | null>;
   findBySpecialties(specialties: Swimming[]): Promise<Instructor[]>;
+  findAvailableInstructors(
+    day: number,
+    startTimeUTC: number,
+    endTimeUTC: number
+  ): Promise<Instructor[]>;
   update(
     instructorId: string,
     instructorData: Instructor
