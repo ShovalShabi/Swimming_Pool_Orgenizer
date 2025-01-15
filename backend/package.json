@@ -22,6 +22,8 @@
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
     "strftime": "^0.10.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.0.5",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
@@ -33,6 +35,8 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.10.6",
     "@types/strftime": "^0.9.8",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.7",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
