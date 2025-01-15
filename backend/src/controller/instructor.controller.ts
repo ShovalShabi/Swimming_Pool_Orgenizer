@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import InstructorService from "../service/instructor.service.js";
 import { Swimming } from "../utils/swimming-enum.utils.js";
+import Instructor from "../dto/instructor/instructor.dto.js";
+import NewInstructor from "../dto/instructor/new-instructor.dto.js";
 
 export default class InstructorController {
   private instructorService: InstructorService;
@@ -11,10 +13,11 @@ export default class InstructorController {
 
   async createInstructor(req: Request, res: Response): Promise<Response> {
     try {
-      const instructorData = req.body;
-      const newInstructor = await this.instructorService.createInstructor(
-        instructorData
-      );
+      const instructorData: NewInstructor = req.body;
+      const newInstructor: Instructor =
+        await this.instructorService.createInstructor(instructorData);
+      console.log("creted instructor successfully");
+
       return res.status(201).json(newInstructor);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -23,7 +26,8 @@ export default class InstructorController {
 
   async getAllInstructors(req: Request, res: Response): Promise<Response> {
     try {
-      const instructors = await this.instructorService.getAllInstructors();
+      const instructors: Instructor[] =
+        await this.instructorService.getAllInstructors();
       return res.status(200).json(instructors);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -38,9 +42,17 @@ export default class InstructorController {
     res: Response
   ): Promise<Response> {
     try {
-      const specialties: Swimming[] = req.body; // Expecting an array of specialties from the request body
-      const instructors =
+      // Extract specialties from query parameters
+      const specialties: Swimming[] = req.query.specialties
+        ? ((Array.isArray(req.query.specialties)
+            ? req.query.specialties
+            : [req.query.specialties]) as Swimming[])
+        : [];
+
+      // Call service to retrieve instructors by specialties
+      const instructors: Instructor[] =
         await this.instructorService.getInstructorsBySpecialties(specialties);
+
       return res.status(200).json(instructors);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -50,9 +62,8 @@ export default class InstructorController {
   async getInstructorById(req: Request, res: Response): Promise<Response> {
     try {
       const { instructorId } = req.params;
-      const instructor = await this.instructorService.getInstructorById(
-        instructorId
-      );
+      const instructor: Instructor =
+        await this.instructorService.getInstructorById(instructorId);
       return res.status(200).json(instructor);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -62,11 +73,12 @@ export default class InstructorController {
   async updateInstructor(req: Request, res: Response): Promise<Response> {
     try {
       const { instructorId } = req.params;
-      const instructorData = req.body;
-      const updatedInstructor = await this.instructorService.updateInstructor(
-        instructorId,
-        instructorData
-      );
+      const instructorData: Instructor = req.body;
+      const updatedInstructor: Instructor | null =
+        await this.instructorService.updateInstructor(
+          instructorId,
+          instructorData
+        );
       return res.status(200).json(updatedInstructor);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
