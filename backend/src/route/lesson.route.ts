@@ -257,34 +257,4 @@ lessonRouter.delete("/", async (req: Request, res: Response) => {
   lessonController.deleteAllLessons(req, res);
 });
 
-/**
- * @swagger
- * /lesson/{lessonId}/instructor/{instructorId}:
- *   post:
- *     summary: Attach a lesson to an instructor
- *     tags: [Lessons]
- *     parameters:
- *       - in: path
- *         name: lessonId
- *         required: true
- *         schema:
- *           type: string
- *         example: "550e8400-e29b-41d4-a716-446655440000"
- *       - in: path
- *         name: instructorId
- *         required: true
- *         schema:
- *           type: string
- *         example: "350e8400-e29b-41d4-a716-446655440000"
- *     responses:
- *       200:
- *         description: Lesson successfully assigned to instructor
- */
-lessonRouter.post(
-  "/:lessonId/instructor/:instructorId",
-  async (req: Request, res: Response) => {
-    lessonController.attachLessonToInstructor(req, res);
-  }
-);
-
 export default lessonRouter;

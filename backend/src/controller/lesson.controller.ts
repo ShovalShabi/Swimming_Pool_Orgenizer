@@ -84,26 +84,4 @@ export default class LessonController {
       return res.status(500).json({ error: error.message });
     }
   }
-
-  // 7. Attach lesson to an instructor
-  async attachLessonToInstructor(
-    req: Request,
-    res: Response
-  ): Promise<Response> {
-    try {
-      const { lessonId, instructorId } = req.params;
-      const updatedLesson = await this.lessonService.attachLessonToInstructor(
-        lessonId,
-        instructorId
-      );
-      if (!updatedLesson) {
-        return res
-          .status(404)
-          .json({ message: "Lesson or Instructor not found" });
-      }
-      return res.status(200).json(updatedLesson);
-    } catch (error: any) {
-      return res.status(500).json({ error: error.message });
-    }
-  }
 }

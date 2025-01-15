@@ -42,13 +42,4 @@ export default class LessonService {
   async deleteAllLessons(): Promise<void> {
     // Implementation goes here
   }
-
-  // 7. Attach a lesson to an instructor
-  async attachLessonToInstructor(
-    lessonId: string,
-    instructorId: string
-  ): Promise<Lesson | null> {
-    // Implementation goes here
-    return null;
-  }
 }
