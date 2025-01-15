@@ -36,7 +36,9 @@ export default class LessonController {
   // 3. Retrieve all lessons
   async getAllLessons(req: Request, res: Response): Promise<Response> {
     try {
-      const lessons = await this.lessonService.getAllLessons();
+      const start: Date = new Date(req.params.start);
+      const end: Date = new Date(req.params.end);
+      const lessons = await this.lessonService.getAllLessons(start, end);
       return res.status(200).json(lessons);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
