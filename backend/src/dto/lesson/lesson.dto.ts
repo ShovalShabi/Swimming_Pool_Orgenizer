@@ -1,17 +1,18 @@
-import LessonModel, { ILesson } from "../../model/lesson.model.js";
+import mongoose from "mongoose";
+import { ILesson } from "../../model/lesson.model.js";
 import { LessonType } from "../../utils/lesson-enum.utils.js";
 import { Swimming } from "../../utils/swimming-enum.utils.js";
 import Student from "../student/student.dto.js";
+import StartAndEndTime from "../instructor/start-and-end-time.dto.js";
 
 // Lesson Class
 export default class Lesson {
   constructor(
-    public lessonId: string,
+    public lessonId: string | null,
     public typeLesson: LessonType,
     public specialties: Swimming[],
     public instructorId: string,
-    public dateAndTime: Date,
-    public duration: number,
+    public startAndEndTime: StartAndEndTime,
     public students: Student[]
   ) {}
 
@@ -22,12 +23,11 @@ export default class Lesson {
    */
   static fromModel(lessonDoc: ILesson): Lesson {
     return new Lesson(
-      lessonDoc.lessonId,
+      lessonDoc._id?.toString() || null, // Convert `_id` to string or keep it null
       lessonDoc.typeLesson,
       lessonDoc.specialties,
-      lessonDoc.instructorId,
-      lessonDoc.dateAndTime,
-      lessonDoc.duration,
+      lessonDoc.instructorId.toString(),
+      lessonDoc.startAndEndTime,
       lessonDoc.students.map(
         (student) =>
           new Student(student.name, student.preferences, student.lessonType)
@@ -39,19 +39,27 @@ export default class Lesson {
    * Convert Lesson DTO to Mongoose Model (LessonModel)
    * @returns Mongoose Model Instance (Document)
    */
-  toModel(): ILesson {
-    return new LessonModel({
-      lessonId: this.lessonId,
-      typeLesson: this.typeLesson,
-      specialties: this.specialties,
-      instructorId: this.instructorId,
-      dateAndTime: this.dateAndTime,
-      duration: this.duration,
-      students: this.students.map((student) => ({
+  static toModel(lesson: Lesson): Partial<ILesson> {
+    const modelData: Partial<ILesson> = {
+      typeLesson: lesson.typeLesson,
+      specialties: lesson.specialties,
+      instructorId: new mongoose.Types.ObjectId(lesson.instructorId),
+      startAndEndTime: {
+        startTime: lesson.startAndEndTime.startTime,
+        endTime: lesson.startAndEndTime.endTime,
+      },
+      students: lesson.students.map((student) => ({
         name: student.name,
         preferences: student.preferences,
         lessonType: student.lessonType,
       })),
-    });
+    };
+
+    // If instructorId exists, set it as `_id` to ensure updates don't create new documents
+    if (lesson.lessonId) {
+      modelData._id = new mongoose.Types.ObjectId(lesson.lessonId);
+    }
+
+    return modelData;
   }
 }
