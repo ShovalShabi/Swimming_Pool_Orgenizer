@@ -1,7 +1,7 @@
 import express from "express";
 import { Request, Response } from "express";
 import InstructorController from "../controller/instructor.controller.js";
-import deserializeAvailabilities from "../utils/middleware/deserialize-date-objects.js";
+import deserializeAvailabilities from "../utils/middleware/deserialize-date-objects.utils.js";
 
 const instructorRouter = express.Router();
 const instructorController = new InstructorController();
