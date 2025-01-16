@@ -2,6 +2,7 @@ import InstructorRepositoryInterface from "./IInstructor.repository.js";
 import InstructorModel, { IInstructor } from "../../model/instructor.model.js";
 import Instructor from "../../dto/instructor/instructor.dto.js";
 import { Swimming } from "../../utils/swimming-enum.utils.js";
+import StartAndEndTime from "../../dto/instructor/start-and-end-time.dto.js";
 
 export default class InstructorRepository
   implements InstructorRepositoryInterface
@@ -33,15 +34,15 @@ export default class InstructorRepository
 
   async findAvailableInstructors(
     day: number,
-    startTimeUTC: number,
-    endTimeUTC: number
+    startTime: Date,
+    endTime: Date
   ): Promise<Instructor[]> {
     const instructorDocs = await InstructorModel.find({
       [`availabilities.${day}`]: {
         $not: { $eq: -1 }, // Ensure the day is not -1 (instructor is available)
       },
-      [`availabilities.${day}.startTimeUTC`]: { $lte: startTimeUTC }, // Instructor's start time is earlier or equal to the requested start time
-      [`availabilities.${day}.endTimeUTC`]: { $gte: endTimeUTC }, // Instructor's end time is later or equal to the requested end time
+      [`availabilities.${day}.startTime`]: { $lte: startTime }, // Instructor's start time is earlier or equal to the requested start time
+      [`availabilities.${day}.endTime`]: { $gte: endTime }, // Instructor's end time is later or equal to the requested end time
     });
 
     return instructorDocs.map((doc) => Instructor.fromModel(doc));

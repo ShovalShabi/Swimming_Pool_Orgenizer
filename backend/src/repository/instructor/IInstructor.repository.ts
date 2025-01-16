@@ -8,8 +8,8 @@ export default interface InstructorRepositoryInterface {
   findBySpecialties(specialties: Swimming[]): Promise<Instructor[]>;
   findAvailableInstructors(
     day: number,
-    startTimeUTC: number,
-    endTimeUTC: number
+    startTime: Date,
+    endTime: Date
   ): Promise<Instructor[]>;
   update(
     instructorId: string,
