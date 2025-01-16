@@ -28,21 +28,17 @@ const InstructorSchema = new Schema<IInstructor>(
               if (value === -1) return true; // `-1` is valid
               if (
                 typeof value === "object" &&
-                typeof value.startTimeUTC === "number" &&
-                typeof value.endTimeUTC === "number"
+                value.startTime instanceof Date &&
+                value.endTime instanceof Date
               ) {
                 return (
-                  value.startTimeUTC >= 0 &&
-                  value.startTimeUTC <= 23 &&
-                  value.endTimeUTC >= 0 &&
-                  value.endTimeUTC <= 23 &&
-                  value.startTimeUTC <= value.endTimeUTC
+                  value.startTime <= value.endTime // Ensure startTime is before or equal to endTime
                 );
               }
               return false;
             },
             message:
-              "Availability must be either -1 (unavailable) or an object with valid startTimeUTC and endTimeUTC.",
+              "Availability must be either -1 (unavailable) or an object with valid startTime and endTime.",
           },
         },
       ],
