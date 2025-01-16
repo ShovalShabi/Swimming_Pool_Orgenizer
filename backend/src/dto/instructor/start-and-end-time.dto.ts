@@ -1,8 +1,8 @@
 // StartAndEndTime Class
 export default class StartAndEndTime {
   constructor(
-    public startTimeUTC: number, // e.g., 9 for 9:00 UTC
-    public endTimeUTC: number // e.g., 17 for 17:00 UTC
+    public startTime: Date, // could be any date bute the relevance is for the hours and minutes
+    public endTime: Date // could be any date bute the relevance is for the hours and minutes
   ) {}
 }
 
