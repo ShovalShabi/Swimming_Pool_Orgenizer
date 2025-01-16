@@ -25,7 +25,7 @@ export default class Instructor {
       instructorDoc.availabilities.map((avail) =>
         typeof avail === "number"
           ? -1
-          : new StartAndEndTime(avail.startTimeUTC, avail.endTimeUTC)
+          : new StartAndEndTime(avail.startTime, avail.endTime)
       )
     );
   }
@@ -41,7 +41,7 @@ export default class Instructor {
       availabilities: instructor.availabilities.map((avail) =>
         typeof avail === "number"
           ? -1
-          : { startTimeUTC: avail.startTimeUTC, endTimeUTC: avail.endTimeUTC }
+          : new StartAndEndTime(avail.startTime, avail.endTime)
       ),
     };
 
