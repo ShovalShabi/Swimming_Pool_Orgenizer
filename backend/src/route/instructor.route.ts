@@ -1,6 +1,7 @@
 import express from "express";
 import { Request, Response } from "express";
 import InstructorController from "../controller/instructor.controller.js";
+import deserializeAvailabilities from "../utils/middleware/deserialize-date-objects.js";
 
 const instructorRouter = express.Router();
 const instructorController = new InstructorController();
@@ -19,35 +20,51 @@ const instructorController = new InstructorController();
  *     StartAndEndTime:
  *       type: object
  *       properties:
- *         startTimeUTC:
- *           type: number
- *           example: 9
- *         endTimeUTC:
- *           type: number
- *           example: 17
+ *         startTime:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-01-16T09:00:00Z"
+ *           description: Start time in ISO 8601 format (UTC).
+ *         endTime:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-01-16T17:00:00Z"
+ *           description: End time in ISO 8601 format (UTC).
  *     Availability:
  *       type: array
  *       items:
  *         oneOf:
  *           - type: integer
  *             example: -1
+ *             description: Indicates unavailability for the day.
  *           - $ref: '#/components/schemas/StartAndEndTime'
- *       description: Array of 7 entries where -1 indicates unavailability for that day.
- *       example: [-1, -1, { "startTimeUTC": 9, "endTimeUTC": 17 }, -1, -1, -1, -1]
+ *       description: Array of 7 entries representing availability for each day of the week (0-Sunday, 6-Saturday).
+ *       example: [
+ *         -1,
+ *         -1,
+ *         { "startTime": "2025-01-16T09:00:00Z", "endTime": "2025-01-16T17:00:00Z" },
+ *         -1,
+ *         -1,
+ *         -1,
+ *         -1
+ *       ]
  *     Instructor:
  *       type: object
  *       properties:
  *         instructorId:
  *           type: string
  *           example: "123e4567-e89b-12d3-a456-426614174000"
+ *           description: Unique identifier for the instructor.
  *         name:
  *           type: string
  *           example: "John Doe"
+ *           description: Full name of the instructor.
  *         specialties:
  *           type: array
  *           items:
  *             type: string
  *           example: ["BACK_STROKE", "CHEST"]
+ *           description: List of specialties the instructor can teach.
  *         availabilities:
  *           $ref: '#/components/schemas/Availability'
  *     NewInstructor:
@@ -60,11 +77,13 @@ const instructorController = new InstructorController();
  *         name:
  *           type: string
  *           example: "John Doe"
+ *           description: Full name of the new instructor.
  *         specialties:
  *           type: array
  *           items:
  *             type: string
  *           example: ["BACK_STROKE", "CHEST"]
+ *           description: List of specialties the new instructor can teach.
  *         availabilities:
  *           $ref: '#/components/schemas/Availability'
  */
@@ -89,9 +108,13 @@ const instructorController = new InstructorController();
  *             schema:
  *               $ref: '#/components/schemas/Instructor'
  */
-instructorRouter.post("/", async (req: Request, res: Response) => {
-  instructorController.createInstructor(req, res);
-});
+instructorRouter.post(
+  "/",
+  deserializeAvailabilities,
+  async (req: Request, res: Response) => {
+    instructorController.createInstructor(req, res);
+  }
+);
 
 /**
  * @swagger
@@ -157,19 +180,21 @@ instructorRouter.get("/specialties", async (req: Request, res: Response) => {
  *           description: Day of the week (0 for Sunday, 6 for Saturday)
  *           example: 2
  *       - in: query
- *         name: startTimeUTC
+ *         name: startTime
  *         required: true
  *         schema:
- *           type: integer
- *           description: Start time in UTC (0-23)
- *           example: 9
+ *           type: string
+ *           format: date-time
+ *           description: Start time in ISO 8601 format (e.g., "2025-01-16T09:00:00Z")
+ *           example: "2025-01-16T09:00:00Z"
  *       - in: query
- *         name: endTimeUTC
+ *         name: endTime
  *         required: true
  *         schema:
- *           type: integer
- *           description: End time in UTC (0-23)
- *           example: 17
+ *           type: string
+ *           format: date-time
+ *           description: End time in ISO 8601 format (e.g., "2025-01-16T17:00:00Z")
+ *           example: "2025-01-16T17:00:00Z"
  *     responses:
  *       200:
  *         description: List of instructors available
@@ -235,9 +260,13 @@ instructorRouter.get(
  *       200:
  *         description: Instructor updated successfully
  */
-instructorRouter.put("/:instructorId", async (req: Request, res: Response) => {
-  instructorController.updateInstructor(req, res);
-});
+instructorRouter.put(
+  "/:instructorId",
+  deserializeAvailabilities,
+  async (req: Request, res: Response) => {
+    instructorController.updateInstructor(req, res);
+  }
+);
 
 /**
  * @swagger
