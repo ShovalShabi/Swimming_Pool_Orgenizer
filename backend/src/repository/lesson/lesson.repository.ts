@@ -21,7 +21,7 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns Lesson DTO if found, otherwise null
    */
   async getLessonById(lessonId: string): Promise<Lesson | null> {
-    const lessonDoc = await LessonModel.findOne({ lessonId }).exec();
+    const lessonDoc = await LessonModel.findOne({ _id: lessonId }).exec();
     return lessonDoc ? Lesson.fromModel(lessonDoc) : null;
   }
 
@@ -31,29 +31,33 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @param end End Date
    * @returns Array of Lesson DTOs
    */
-  async getAllLessons(start: Date, end: Date): Promise<Lesson[]> {
+  async getAllLessonsWithinRange(start: Date, end: Date): Promise<Lesson[]> {
     const lessonDocs = await LessonModel.find({
-      dateAndTime: { $gte: start, $lte: end },
+      startTime: { $gte: start, $lte: end },
     }).exec();
     return lessonDocs.map(Lesson.fromModel);
+  }
+
+  async getInstructorLessons(instructorId: string): Promise<Lesson[]> {
+    const lessonDocs = await LessonModel.find({ instructorId });
+    return lessonDocs.map((doc) => Lesson.fromModel(doc));
   }
 
   /**
    * Updates a lesson by its ID.
    * @param lessonId Lesson ID
-   * @param lessonData Partial update of Lesson DTO
+   * @param lessonData Update of Lesson DTO
    * @returns True if update was successful, otherwise false
    */
   async updateLesson(
     lessonId: string,
-    lessonData: Partial<Lesson>
-  ): Promise<boolean> {
+    lessonData: Lesson
+  ): Promise<Lesson | null> {
     const updatedLesson = await LessonModel.findOneAndUpdate(
-      { lessonId },
-      lessonData,
-      { new: true }
+      { _id: lessonId },
+      Lesson.toModel(lessonData)
     ).exec();
-    return updatedLesson !== null;
+    return updatedLesson ? Lesson.fromModel(updatedLesson) : null;
   }
 
   /**
@@ -62,7 +66,7 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns True if deletion was successful, otherwise false
    */
   async deleteLesson(lessonId: string): Promise<boolean> {
-    const result = await LessonModel.findOneAndDelete({ lessonId }).exec();
+    const result = await LessonModel.findOneAndDelete({ _id: lessonId }).exec();
     return result !== null;
   }
 
