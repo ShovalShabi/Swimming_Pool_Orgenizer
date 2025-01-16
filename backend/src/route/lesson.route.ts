@@ -1,6 +1,6 @@
-import express from "express";
-import { Request, Response } from "express";
+import express, { Request, Response } from "express";
 import LessonController from "../controller/lesson.controller.js";
+import deserializeLessonTimes from "../utils/middleware/deserialize-single-date-object.utils.js";
 
 const lessonRouter = express.Router();
 const lessonController = new LessonController();
@@ -9,7 +9,7 @@ const lessonController = new LessonController();
  * @swagger
  * tags:
  *   name: Lessons
- *   description: Lesson management APIs
+ *   description: APIs for managing lessons.
  */
 
 /**
@@ -21,72 +21,38 @@ const lessonController = new LessonController();
  *       required:
  *         - typeLesson
  *         - specialties
- *         - dateAndTime
- *         - duration
+ *         - instructorId
+ *         - startAndEndTime
  *         - students
  *       properties:
  *         typeLesson:
  *           type: string
- *           enum: [PUBLIC, PRIVATE]
- *           example: "PUBLIC"
- *         specialties:
- *           type: array
- *           items:
- *             type: string
- *             enum: [CHEST, BACK_STROKE, BUTTERFLY_STROKE, ROWING]
- *           example: ["BACK_STROKE", "CHEST"]
- *         dateAndTime:
- *           type: string
- *           format: date-time
- *           example: "2025-01-15T10:00:00Z"
- *         duration:
- *           type: number
- *           example: 60
- *         students:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 example: "John Doe"
- *               preferences:
- *                 type: array
- *                 items:
- *                   type: string
- *                   enum: [CHEST, BACK_STROKE, BUTTERFLY_STROKE, ROWING]
- *                 example: ["CHEST"]
- *               lessonType:
- *                 type: string
- *                 enum: [PUBLIC, PRIVATE]
- *                 example: "PRIVATE"
- *
- *     Lesson:
- *       type: object
- *       properties:
- *         lessonId:
- *           type: string
- *           example: "550e8400-e29b-41d4-a716-446655440000"
- *         typeLesson:
- *           type: string
- *           enum: [PUBLIC, PRIVATE]
+ *           enum: [PUBLIC, PRIVATE, MIXED]
+ *           description: The type of the lesson.
  *           example: "PRIVATE"
  *         specialties:
  *           type: array
  *           items:
  *             type: string
- *             enum: [CHEST, BACK_STROKE, BUTTERFLY_STROKE, ROWING]
+ *           description: The specialties covered in the lesson.
  *           example: ["CHEST"]
  *         instructorId:
  *           type: string
- *           example: "350e8400-e29b-41d4-a716-446655440000"
- *         dateAndTime:
- *           type: string
- *           format: date-time
- *           example: "2025-01-15T10:00:00Z"
- *         duration:
- *           type: number
- *           example: 90
+ *           description: The ID of the instructor teaching the lesson.
+ *           example: "123e4567-e89b-12d3-a456-426614174000"
+ *         startAndEndTime:
+ *           type: object
+ *           properties:
+ *             startTime:
+ *               type: string
+ *               format: date-time
+ *               description: Start time of the lesson.
+ *               example: "2025-01-15T10:00:00Z"
+ *             endTime:
+ *               type: string
+ *               format: date-time
+ *               description: End time of the lesson.
+ *               example: "2025-01-15T11:00:00Z"
  *         students:
  *           type: array
  *           items:
@@ -94,17 +60,29 @@ const lessonController = new LessonController();
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Jane Doe"
+ *                 description: The name of the student.
+ *                 example: "John Doe"
  *               preferences:
  *                 type: array
  *                 items:
  *                   type: string
- *                   enum: [CHEST, BACK_STROKE, BUTTERFLY_STROKE, ROWING]
- *                 example: ["ROWING"]
+ *                 description: The preferences of the student.
+ *                 example: ["BACK_STROKE"]
  *               lessonType:
  *                 type: string
  *                 enum: [PUBLIC, PRIVATE]
- *                 example: "PUBLIC"
+ *                 description: Preferred type of lesson.
+ *                 example: "PRIVATE"
+ *     Lesson:
+ *       type: object
+ *       allOf:
+ *         - $ref: '#/components/schemas/NewLesson'
+ *         - type: object
+ *           properties:
+ *             lessonId:
+ *               type: string
+ *               description: Unique identifier for the lesson.
+ *               example: "550e8400-e29b-41d4-a716-446655440000"
  */
 
 /**
@@ -113,6 +91,14 @@ const lessonController = new LessonController();
  *   post:
  *     summary: Create a new lesson
  *     tags: [Lessons]
+ *     parameters:
+ *       - in: query
+ *         name: day
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: Day of the week (0 = Sunday, 6 = Saturday).
+ *           example: 2
  *     requestBody:
  *       required: true
  *       content:
@@ -121,15 +107,19 @@ const lessonController = new LessonController();
  *             $ref: '#/components/schemas/NewLesson'
  *     responses:
  *       201:
- *         description: Lesson created successfully
+ *         description: Lesson created successfully.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Lesson'
  */
-lessonRouter.post("/", async (req: Request, res: Response) => {
-  lessonController.createLesson(req, res);
-});
+lessonRouter.post(
+  "/",
+  deserializeLessonTimes,
+  (req: Request, res: Response) => {
+    lessonController.createLesson(req, res);
+  }
+);
 
 /**
  * @swagger
@@ -143,16 +133,17 @@ lessonRouter.post("/", async (req: Request, res: Response) => {
  *         required: true
  *         schema:
  *           type: string
- *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *           description: The ID of the lesson.
+ *           example: "550e8400-e29b-41d4-a716-446655440000"
  *     responses:
  *       200:
- *         description: Successfully retrieved the lesson
+ *         description: Successfully retrieved the lesson.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Lesson'
  */
-lessonRouter.get("/:lessonId", async (req: Request, res: Response) => {
+lessonRouter.get("/:lessonId", (req: Request, res: Response) => {
   lessonController.getLessonById(req, res);
 });
 
@@ -160,7 +151,7 @@ lessonRouter.get("/:lessonId", async (req: Request, res: Response) => {
  * @swagger
  * /lesson:
  *   get:
- *     summary: Retrieve all lessons
+ *     summary: Retrieve all lessons within a date range
  *     tags: [Lessons]
  *     parameters:
  *       - in: query
@@ -169,17 +160,19 @@ lessonRouter.get("/:lessonId", async (req: Request, res: Response) => {
  *         schema:
  *           type: string
  *           format: date-time
- *         example: "2025-01-15T00:00:00Z"
+ *           description: Start date of the range.
+ *           example: "2025-01-01T00:00:00Z"
  *       - in: query
  *         name: end
  *         required: true
  *         schema:
  *           type: string
  *           format: date-time
- *         example: "2025-02-15T23:59:59Z"
+ *           description: End date of the range.
+ *           example: "2025-01-31T23:59:59Z"
  *     responses:
  *       200:
- *         description: Successfully retrieved all lessons
+ *         description: Successfully retrieved lessons within the range.
  *         content:
  *           application/json:
  *             schema:
@@ -187,9 +180,48 @@ lessonRouter.get("/:lessonId", async (req: Request, res: Response) => {
  *               items:
  *                 $ref: '#/components/schemas/Lesson'
  */
-lessonRouter.get("/", async (req: Request, res: Response) => {
-  lessonController.getAllLessons(req, res);
+lessonRouter.get("/", (req: Request, res: Response) => {
+  lessonController.getAllLessonsWithinRange(req, res);
 });
+
+/**
+ * @swagger
+ * /lesson/instructor/{instructorId}/day:
+ *   get:
+ *     summary: Get lessons of an instructor on a specific day
+ *     tags: [Lessons]
+ *     parameters:
+ *       - in: path
+ *         name: instructorId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           description: The ID of the instructor.
+ *           example: "12345"
+ *       - in: query
+ *         name: day
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *           description: The day to filter lessons by.
+ *           example: "2025-01-15"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved lessons for the instructor on the specified day.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Lesson'
+ */
+lessonRouter.get(
+  "/instructor/:instructorId/day",
+  (req: Request, res: Response) => {
+    lessonController.getLessonsOfInstructorByDay(req, res);
+  }
+);
 
 /**
  * @swagger
@@ -203,20 +235,29 @@ lessonRouter.get("/", async (req: Request, res: Response) => {
  *         required: true
  *         schema:
  *           type: string
- *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *           description: The ID of the lesson.
+ *           example: "550e8400-e29b-41d4-a716-446655440000"
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Lesson'
+ *             $ref: '#/components/schemas/NewLesson'
  *     responses:
  *       200:
- *         description: Lesson updated successfully
+ *         description: Lesson updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Lesson'
  */
-lessonRouter.put("/:lessonId", async (req: Request, res: Response) => {
-  lessonController.updateLesson(req, res);
-});
+lessonRouter.put(
+  "/:lessonId",
+  deserializeLessonTimes,
+  (req: Request, res: Response) => {
+    lessonController.updateLesson(req, res);
+  }
+);
 
 /**
  * @swagger
@@ -230,12 +271,13 @@ lessonRouter.put("/:lessonId", async (req: Request, res: Response) => {
  *         required: true
  *         schema:
  *           type: string
- *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *           description: The ID of the lesson.
+ *           example: "550e8400-e29b-41d4-a716-446655440000"
  *     responses:
  *       200:
- *         description: Lesson deleted successfully
+ *         description: Lesson deleted successfully.
  */
-lessonRouter.delete("/:lessonId", async (req: Request, res: Response) => {
+lessonRouter.delete("/:lessonId", (req: Request, res: Response) => {
   lessonController.deleteLesson(req, res);
 });
 
@@ -247,9 +289,9 @@ lessonRouter.delete("/:lessonId", async (req: Request, res: Response) => {
  *     tags: [Lessons]
  *     responses:
  *       200:
- *         description: All lessons deleted successfully
+ *         description: All lessons deleted successfully.
  */
-lessonRouter.delete("/", async (req: Request, res: Response) => {
+lessonRouter.delete("/", (req: Request, res: Response) => {
   lessonController.deleteAllLessons(req, res);
 });
 
