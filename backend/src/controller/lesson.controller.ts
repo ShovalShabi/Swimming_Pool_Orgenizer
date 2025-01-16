@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
-import LessonService from "../service/lesson.service.js";
+import LessonService from "../service/lesson/lesson.service.js";
+import LessonServiceInterface from "../service/lesson/ILesson.service.js";
 
 export default class LessonController {
-  private lessonService: LessonService;
+  private lessonService: LessonServiceInterface;
 
   constructor() {
     this.lessonService = new LessonService();
@@ -11,8 +12,13 @@ export default class LessonController {
   // 1. Create a new lesson
   async createLesson(req: Request, res: Response): Promise<Response> {
     try {
+      const dayOfTheWeek: number = parseInt(req.query.day as string);
       const lessonData = req.body;
-      const newLesson = await this.lessonService.createLesson(lessonData);
+
+      const newLesson = await this.lessonService.createLesson(
+        lessonData,
+        dayOfTheWeek
+      );
       return res.status(201).json(newLesson);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -24,46 +30,70 @@ export default class LessonController {
     try {
       const { lessonId } = req.params;
       const lesson = await this.lessonService.getLessonById(lessonId);
-      if (!lesson) {
-        return res.status(404).json({ message: "Lesson not found" });
-      }
+
       return res.status(200).json(lesson);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
     }
   }
 
-  // 3. Retrieve all lessons
-  async getAllLessons(req: Request, res: Response): Promise<Response> {
+  // 3. Retrieve all lessons within a range
+  async getAllLessonsWithinRange(
+    req: Request,
+    res: Response
+  ): Promise<Response> {
     try {
-      const start: Date = new Date(req.params.start);
-      const end: Date = new Date(req.params.end);
-      const lessons = await this.lessonService.getAllLessons(start, end);
+      const start = new Date(req.query.start as string);
+      const end = new Date(req.query.end as string);
+
+      const lessons = await this.lessonService.getAllLessonsWithinRange(
+        start,
+        end
+      );
       return res.status(200).json(lessons);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
     }
   }
 
-  // 4. Update a lesson by ID
+  // 4. Get lessons of an instructor by day
+  async getLessonsOfInstructorByDay(
+    req: Request,
+    res: Response
+  ): Promise<Response> {
+    try {
+      const { instructorId } = req.params;
+      const day = new Date(req.query.day as string);
+
+      const lessons = await this.lessonService.getLessonsOfInstrucorByDay(
+        instructorId,
+        day
+      );
+
+      return res.status(200).json(lessons);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  // 5. Update a lesson by ID
   async updateLesson(req: Request, res: Response): Promise<Response> {
     try {
       const { lessonId } = req.params;
       const lessonData = req.body;
+
       const updatedLesson = await this.lessonService.updateLesson(
         lessonId,
         lessonData
       );
-      if (!updatedLesson) {
-        return res.status(404).json({ message: "Lesson not found" });
-      }
+
       return res.status(200).json(updatedLesson);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
     }
   }
 
-  // 5. Delete a lesson by ID
+  // 6. Delete a lesson by ID
   async deleteLesson(req: Request, res: Response): Promise<Response> {
     try {
       const { lessonId } = req.params;
@@ -75,7 +105,7 @@ export default class LessonController {
     }
   }
 
-  // 6. Delete all lessons
+  // 7. Delete all lessons
   async deleteAllLessons(req: Request, res: Response): Promise<Response> {
     try {
       await this.lessonService.deleteAllLessons();
