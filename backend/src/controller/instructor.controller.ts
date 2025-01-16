@@ -66,14 +66,15 @@ export default class InstructorController {
   ): Promise<Response> {
     try {
       const day: number = parseInt(req.query.day as string);
-      const startTimeUTC: number = parseInt(req.query.startTimeUTC as string);
-      const endTimeUTC: number = parseInt(req.query.endTimeUTC as string);
+      // Parse `startTime` and `endTime` parameters
+      const startTime = new Date(req.query.startTime as string);
+      const endTime = new Date(req.query.endTime as string);
 
       const instructors: Instructor[] =
         await this.instructorService.getInstructorsByAvailability(
           day,
-          startTimeUTC,
-          endTimeUTC
+          startTime,
+          endTime
         );
 
       return res.status(200).json(instructors);
