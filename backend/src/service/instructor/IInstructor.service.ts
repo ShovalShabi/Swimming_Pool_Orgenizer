@@ -8,8 +8,8 @@ export default interface InstructorServiceInterface {
   getInstructorsBySpecialties(specialties: Swimming[]): Promise<Instructor[]>;
   getInstructorsByAvailability(
     day: number,
-    startTimeUTC: number,
-    endTimeUTC: number
+    startTime: Date,
+    endTime: Date
   ): Promise<Instructor[]>;
   getInstructorById(instructorId: string): Promise<Instructor>;
   updateInstructor(

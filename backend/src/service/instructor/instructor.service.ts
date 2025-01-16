@@ -51,32 +51,34 @@ export default class InstructorService implements InstructorServiceInterface {
 
   async getInstructorsByAvailability(
     day: number,
-    startTimeUTC: number,
-    endTimeUTC: number
+    startTime: Date,
+    endTime: Date
   ) {
-    if (isNaN(day) || day < 0 || day > 6)
+    // Validate the day
+    if (isNaN(day) || day < 0 || day > 6) {
       throw new createHttpError.BadRequest(
-        "Invalid day. Must be between 0 and 6."
-      );
-
-    if (
-      isNaN(startTimeUTC) ||
-      startTimeUTC < 0 ||
-      startTimeUTC > 23 ||
-      isNaN(endTimeUTC) ||
-      endTimeUTC < 0 ||
-      endTimeUTC > 23 ||
-      startTimeUTC > endTimeUTC
-    ) {
-      throw new createHttpError.BadRequest(
-        "Invalid time range. Ensure 0 <= startTimeUTC <= endTimeUTC <= 23."
+        "Invalid day. Must be between 0 (Sunday) and 6 (Saturday)."
       );
     }
 
+    // Validate the time range
+    if (!(startTime instanceof Date) || !(endTime instanceof Date)) {
+      throw new createHttpError.BadRequest(
+        "Invalid startTime or endTime. They must be valid Date objects."
+      );
+    }
+
+    if (startTime >= endTime) {
+      throw new createHttpError.BadRequest(
+        "Invalid time range. startTime must be earlier than endTime."
+      );
+    }
+
+    // Call the repository method with the given times
     return this.instructorRepository.findAvailableInstructors(
       day,
-      startTimeUTC,
-      endTimeUTC
+      startTime,
+      endTime
     );
   }
 
@@ -146,20 +148,35 @@ export default class InstructorService implements InstructorServiceInterface {
     // Validate each availability entry
     for (const availability of instructorData.availabilities) {
       if (typeof availability === "object") {
+        // Validate the `Date` objects
+        if (
+          isNaN(availability.startTime.getTime()) ||
+          isNaN(availability.endTime.getTime())
+        ) {
+          throw new createHttpError.BadRequest(
+            "Invalid date format for startTime or endTime"
+          );
+        }
         numDays++; // That means that thre is availability
-        if (availability.startTimeUTC < 0 || availability.startTimeUTC > 23) {
+        if (
+          availability.startTime.getHours() < 0 ||
+          availability.startTime.getHours() > 23
+        ) {
           throw new createHttpError.BadRequest(
-            `Invalid start time (${availability.startTimeUTC}). Must be between 0 and 23.`
+            `Invalid start time (${availability.startTime}). Must be between 0 and 23.`
           );
         }
-        if (availability.endTimeUTC < 0 || availability.endTimeUTC > 23) {
+        if (
+          availability.endTime.getHours() < 0 ||
+          availability.endTime.getHours() > 23
+        ) {
           throw new createHttpError.BadRequest(
-            `Invalid end time (${availability.endTimeUTC}). Must be between 0 and 23.`
+            `Invalid end time (${availability.endTime.getHours()}). Must be between 0 and 23.`
           );
         }
-        if (availability.startTimeUTC > availability.endTimeUTC) {
+        if (availability.startTime >= availability.endTime) {
           throw new createHttpError.BadRequest(
-            `Start time (${availability.startTimeUTC}) cannot be greater than end time (${availability.endTimeUTC}).`
+            `Start time (${availability.startTime.getHours()}:${availability.startTime.getMinutes()}) cannot be greater or equal to end time (${availability.endTime.getHours()}:${availability.endTime.getMinutes()}).`
           );
         }
       }
