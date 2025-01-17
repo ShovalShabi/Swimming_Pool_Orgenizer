@@ -9,8 +9,8 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @param lessonData NewLesson DTO
    * @returns Created Lesson DTO
    */
-  async createLesson(lessonData: NewLesson): Promise<Lesson> {
-    const lessonModel = new LessonModel(lessonData);
+  async createLesson(lessonData: Lesson): Promise<Lesson> {
+    const lessonModel = new LessonModel(Lesson.toModel(lessonData));
     const savedLesson: ILesson = await lessonModel.save();
     return Lesson.fromModel(savedLesson);
   }
@@ -33,7 +33,7 @@ export default class LessonRepository implements LessonRepositoryInterface {
    */
   async getAllLessonsWithinRange(start: Date, end: Date): Promise<Lesson[]> {
     const lessonDocs = await LessonModel.find({
-      startTime: { $gte: start, $lte: end },
+      "startAndEndTime.startTime": { $gte: start, $lte: end },
     }).exec();
     return lessonDocs.map(Lesson.fromModel);
   }
