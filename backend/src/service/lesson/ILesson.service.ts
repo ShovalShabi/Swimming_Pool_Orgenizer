@@ -9,7 +9,7 @@ export default interface LessonServiceInterface {
     instructorId: string,
     day: Date
   ): Promise<Lesson[]>;
-  updateLesson(lessonId: string, lessonData: Lesson): Promise<boolean>;
+  updateLesson(lessonId: string, lessonData: Lesson): Promise<Lesson | null>;
   deleteLesson(lessonId: string): Promise<boolean>;
   deleteAllLessons(): Promise<boolean>;
 }
