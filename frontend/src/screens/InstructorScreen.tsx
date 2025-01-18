@@ -72,7 +72,7 @@ const InstructorScreen: React.FC = () => {
 
       setAvailabilities(updatedAvailabilities);
       setAvailableDays(availableDays.filter((d) => d !== selectedDay));
-      setSelectedDay(null); // Reset selection
+      setSelectedDay(null);
       setStartTime(null);
       setEndTime(null);
     }
@@ -82,7 +82,6 @@ const InstructorScreen: React.FC = () => {
     const updatedAvailabilities = [...availabilities];
     updatedAvailabilities[dayIndex] = -1;
 
-    // Get the removed day and place it back in the correct position
     const removedDay = Object.values(DaysOfWeek)[dayIndex];
     const updatedAvailableDays = [...availableDays, removedDay].sort(
       (a, b) =>
@@ -129,7 +128,7 @@ const InstructorScreen: React.FC = () => {
     <View style={styles.container}>
       <ScrollView horizontal contentContainerStyle={styles.scrollContainer}>
         <CustomCard
-          title="Add Instructor"
+          title="+ Add Instructor"
           onPress={() => setModalVisible(true)}
           style={styles.card}
         />
@@ -146,7 +145,9 @@ const InstructorScreen: React.FC = () => {
               setAvailabilities(instructor.availabilities);
             }}
           >
-            <Text>System ID: {instructor.instructorId}</Text>
+            <Text style={styles.systemId}>
+              System ID: {instructor.instructorId}
+            </Text>
             <Text>Specialties: {instructor.specialties.join(", ")}</Text>
           </CustomCard>
         ))}
@@ -157,110 +158,172 @@ const InstructorScreen: React.FC = () => {
         title={selectedInstructor ? "Edit Instructor" : "Add New Instructor"}
         onClose={() => setModalVisible(false)}
       >
-        <View>
-          {selectedInstructor?.instructorId && (
-            <Text>System ID: {selectedInstructor.instructorId}</Text>
-          )}
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter Instructor Name"
-            placeholderTextColor="#555" // Darker placeholder text
-            style={styles.input}
-          />
+        <ScrollView style={styles.modalScrollable}>
           <View>
-            <Text>Specialties:</Text>
-            {availableSpecialties.map((specialty) => (
-              <Button
-                key={specialty}
-                onPress={() => handleAddSpecialty(specialty)}
-              >
-                {specialty}
-              </Button>
-            ))}
-            {specialties.map((specialty) => (
-              <Button
-                key={specialty}
-                mode="contained"
-                onPress={() => handleRemoveSpecialty(specialty)}
-                style={styles.specialtyBubble}
-              >
-                <Text style={styles.centeredText}>
-                  {specialty} <Text style={styles.xButton}>X</Text>
-                </Text>
-              </Button>
-            ))}
-          </View>
-          <View>
-            <Text>Availability:</Text>
-            <ScrollView>
-              <Text>Select Day:</Text>
-              {availableDays.map((day) => (
-                <Button key={day} onPress={() => setSelectedDay(day)}>
-                  {day}
-                </Button>
-              ))}
+            {selectedInstructor?.instructorId && (
+              <Text style={styles.systemId}>
+                System ID: {selectedInstructor.instructorId}
+              </Text>
+            )}
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Enter Instructor Name"
+              placeholderTextColor="#555"
+              style={styles.input}
+            />
+            <View>
+              <Text>Specialties:</Text>
+              <View style={styles.specialtiesContainer}>
+                {availableSpecialties.map((specialty) => (
+                  <Button
+                    key={specialty}
+                    onPress={() => handleAddSpecialty(specialty)}
+                    style={styles.dayButton}
+                  >
+                    {specialty}
+                  </Button>
+                ))}
+              </View>
+              <View style={styles.specialtiesContainer}>
+                {specialties.map((specialty) => (
+                  <Button
+                    key={specialty}
+                    mode="contained"
+                    onPress={() => handleRemoveSpecialty(specialty)}
+                    style={styles.specialtyBubble}
+                  >
+                    <Text style={styles.centeredText}>
+                      {specialty} <Text style={styles.xButton}>X</Text>
+                    </Text>
+                  </Button>
+                ))}
+              </View>
+            </View>
+
+            <View>
+              <Text>Availability:</Text>
+              <View style={styles.daysContainer}>
+                {availableDays.map((day) => (
+                  <Button
+                    key={day}
+                    onPress={() => {
+                      setSelectedDay(day);
+                      setAvailableDays(availableDays.filter((d) => d !== day));
+                    }}
+                    style={styles.dayButton}
+                  >
+                    {day}
+                  </Button>
+                ))}
+              </View>
+              {selectedDay && (
+                <View style={styles.selectedDayContainer}>
+                  <Text style={styles.selectedDayText}>Selected Day:</Text>
+                  <Button
+                    onPress={() => {
+                      if (selectedDay) {
+                        setAvailableDays(
+                          [...availableDays, selectedDay].sort(
+                            (a, b) =>
+                              Object.values(DaysOfWeek).indexOf(a) -
+                              Object.values(DaysOfWeek).indexOf(b)
+                          )
+                        );
+                        setSelectedDay(null);
+                        setStartTime(null);
+                        setEndTime(null);
+                      }
+                    }}
+                    style={styles.specialtyBubble}
+                  >
+                    <Text style={styles.centeredText}>
+                      {selectedDay}
+                      <Text style={styles.xButton}> X</Text>
+                    </Text>
+                  </Button>
+                </View>
+              )}
               {selectedDay && (
                 <>
-                  <Text>Day Selected: {selectedDay}</Text>
-                  <Button onPress={() => setShowStartPicker(true)}>
+                  <Button
+                    onPress={() => setShowStartPicker(!showStartPicker)}
+                    style={styles.toggleButton}
+                  >
                     Select Start Time
                   </Button>
                   {showStartPicker && (
                     <DateTimePicker
                       value={startTime || new Date()}
                       mode="time"
-                      is24Hour={true}
+                      is24Hour
                       onChange={(event, date) => {
-                        setShowStartPicker(false);
                         if (date) setStartTime(date);
                       }}
                     />
                   )}
-                  <Button onPress={() => setShowEndPicker(true)}>
+                  <Button
+                    onPress={() => setShowEndPicker(!showEndPicker)}
+                    style={styles.toggleButton}
+                  >
                     Select End Time
                   </Button>
                   {showEndPicker && (
                     <DateTimePicker
                       value={endTime || new Date()}
                       mode="time"
-                      is24Hour={true}
+                      is24Hour
                       onChange={(event, date) => {
-                        setShowEndPicker(false);
                         if (date) setEndTime(date);
                       }}
                     />
                   )}
-                  <Button onPress={handleAddAvailability}>
+                  <Button
+                    onPress={handleAddAvailability}
+                    style={styles.addButton}
+                    disabled={!startTime || !endTime}
+                  >
                     Add Availability
                   </Button>
                 </>
               )}
-            </ScrollView>
+            </View>
             {availabilities.map((availability, index) =>
               availability !== -1 ? (
                 <Button
                   key={index}
                   onPress={() => handleRemoveAvailability(index)}
-                  style={styles.availabilityBubble}
+                  style={styles.specialtyBubble}
                 >
-                  {Object.values(DaysOfWeek)[index]}{" "}
-                  {new Date(availability.startTime).toLocaleTimeString()} -{" "}
-                  {new Date(availability.endTime).toLocaleTimeString()}{" "}
-                  <Text style={styles.xButton}>X</Text>
+                  <Text style={styles.centeredText}>
+                    {Object.values(DaysOfWeek)[index]}{" "}
+                    {new Date(availability.startTime).toLocaleTimeString()} -{" "}
+                    {new Date(availability.endTime).toLocaleTimeString()}{" "}
+                    <Text style={styles.xButton}>X</Text>
+                  </Text>
                 </Button>
               ) : null
             )}
-          </View>
-          <Button mode="contained" onPress={handleSaveInstructor}>
-            {selectedInstructor ? "Update Instructor" : "Add Instructor"}
-          </Button>
-          {selectedInstructor && (
-            <Button mode="text" onPress={handleDeleteInstructor} color="red">
-              Delete Instructor
+            <Button
+              mode="contained"
+              onPress={handleSaveInstructor}
+              style={
+                selectedInstructor ? styles.updateButton : styles.addButton
+              }
+            >
+              {selectedInstructor ? "Update Instructor" : "Add Instructor"}
             </Button>
-          )}
-        </View>
+            {selectedInstructor && (
+              <Button
+                mode="text"
+                onPress={handleDeleteInstructor}
+                style={styles.deleteButton}
+              >
+                Delete Instructor
+              </Button>
+            )}
+          </View>
+        </ScrollView>
       </CustomModal>
 
       <Button
@@ -275,6 +338,16 @@ const InstructorScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  selectedDayContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  selectedDayText: {
+    marginRight: 10,
+    fontSize: 16,
+    color: "#333",
+  },
   container: {
     flex: 1,
     padding: 20,
@@ -297,12 +370,13 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginVertical: 10,
-    color: "#333", // Darker input text
+    color: "#333",
   },
   specialtyBubble: {
     backgroundColor: "#7e57c2",
+    marginHorizontal: 5,
     marginVertical: 5,
-    alignItems: "center", // Center specialty text
+    alignItems: "center",
     justifyContent: "center",
   },
   centeredText: {
@@ -310,7 +384,8 @@ const styles = StyleSheet.create({
     color: "white",
   },
   availabilityBubble: {
-    backgroundColor: "#7e57c2",
+    backgroundColor: "#d9f7be",
+    marginHorizontal: 5,
     marginVertical: 5,
     paddingHorizontal: 10,
   },
@@ -318,6 +393,45 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: "white",
     fontWeight: "bold",
+  },
+  deleteButton: {
+    backgroundColor: "#ffcccc",
+    marginTop: 10,
+  },
+  updateButton: {
+    backgroundColor: "#ffd580",
+    marginTop: 10,
+  },
+  addButton: {
+    backgroundColor: "#d9f7be",
+    marginTop: 10,
+  },
+  modalScrollable: {
+    maxHeight: height * 0.8,
+  },
+  toggleButton: {
+    backgroundColor: "#cce5ff",
+    marginVertical: 5,
+  },
+  daysContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginVertical: 5,
+  },
+  specialtiesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginVertical: 5,
+  },
+  dayButton: {
+    marginHorizontal: 5,
+    marginVertical: 5,
+    backgroundColor: "#f0f0f0",
+  },
+  systemId: {
+    color: "#d3d3d3",
   },
 });
 
