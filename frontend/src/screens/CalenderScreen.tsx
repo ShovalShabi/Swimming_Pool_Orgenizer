@@ -34,6 +34,8 @@ const getWeekDates = (offset: number) => {
   });
 };
 
+const { width, height } = Dimensions.get("window");
+
 const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{
@@ -66,7 +68,17 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </View>
 
       {/* Calendar Grid */}
-      <ScrollView contentContainerStyle={styles.grid}>
+      <ScrollView style={styles.scrollable} contentContainerStyle={styles.grid}>
+        <View style={styles.hoursColumn}>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hour = i + 6; // Start from 06:00
+            return (
+              <View key={hour} style={styles.hourCell}>
+                <Text style={styles.hourLabel}>{hour}:00</Text>
+              </View>
+            );
+          })}
+        </View>
         {weekDates.map((date, index) => (
           <View
             key={daysOfWeek[index]}
@@ -75,18 +87,25 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               date.toDateString() === today ? styles.highlightedColumn : null,
             ]}
           >
-            <Text style={styles.dayHeader}>
+            <Text
+              style={[
+                styles.dayHeader,
+                date.toDateString() === today ? styles.todayHeader : null,
+              ]}
+            >
               {daysOfWeek[index]} {date.getDate()}/{date.getMonth() + 1}
             </Text>
-            {Array.from({ length: 24 }).map((_, hour) => (
+            {Array.from({ length: 18 }).map((_, hour) => (
               <CalendarCell
                 key={`${daysOfWeek[index]}-${hour}`}
-                time={`${hour}:00`}
+                time={`${hour + 6}:00`} // Start from 06:00
                 isHighlighted={
-                  hour === new Date().getHours() &&
+                  hour + 6 === new Date().getHours() &&
                   date.toDateString() === today
                 }
-                onPress={() => handleCellPress(daysOfWeek[index], `${hour}:00`)}
+                onPress={() =>
+                  handleCellPress(daysOfWeek[index], `${hour + 6}:00`)
+                }
               />
             ))}
           </View>
@@ -119,11 +138,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: StatusBar.currentHeight || 24, // Add padding for status bar
-    paddingHorizontal: 10,
     backgroundColor: "#f6f6f6",
   },
   backButton: {
-    marginBottom: 10,
+    margin: 10,
   },
   navigation: {
     flexDirection: "row",
@@ -131,21 +149,46 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
+  scrollable: {
+    flex: 1,
+  },
   grid: {
     flexDirection: "row",
-    justifyContent: "space-around",
+  },
+  hoursColumn: {
+    width: width * 0.15,
+    backgroundColor: "#d1c4e9", // Darker purple for the hours column
+    justifyContent: "flex-start",
+    paddingTop: height / 40, // Align hours with rows
+  },
+  hourCell: {
+    height: height / 20, // Dynamic height for uniformity
+    justifyContent: "center",
+  },
+  hourLabel: {
+    textAlign: "center",
+    fontSize: 14,
+    color: "#555",
   },
   column: {
     flex: 1,
-    paddingHorizontal: 5,
+    borderLeftWidth: 1,
+    borderColor: "#ddd",
   },
   highlightedColumn: {
-    backgroundColor: "#b2ebf2", // Darker teal for highlighting today's column
+    backgroundColor: "#bbdefb", // Light blue for today's column
   },
   dayHeader: {
     textAlign: "center",
     fontWeight: "bold",
     marginBottom: 5,
+    backgroundColor: "#e1bee7", // Light purple background for headers
+    paddingVertical: 5,
+    width: "100%",
+  },
+  todayHeader: {
+    backgroundColor: "#7e57c2", // Stronger blue-purple for today's header
+    color: "#fff", // White text for contrast
   },
 });
 
