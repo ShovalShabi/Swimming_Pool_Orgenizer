@@ -6,6 +6,7 @@ import {
   Dimensions,
   TextInput,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomCard from "../components/Card";
 import CustomModal from "../components/Modal";
 import { useNavigation } from "@react-navigation/native";
@@ -14,6 +15,10 @@ import InstructorService from "../services/instructor.service";
 import Instructor from "../dto/instructor/instructor.dto";
 import { Swimming } from "../utils/swimming-enum.utils";
 import { DaysOfWeek } from "../utils/days-week-enum.utils";
+import StartAndEndTime, {
+  Availability,
+} from "../dto/instructor/start-and-end-time.dto";
+import NewInstructor from "../dto/instructor/new-instructor.dto";
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,19 +27,22 @@ const InstructorScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedInstructor, setSelectedInstructor] =
     useState<Instructor | null>(null);
-  const navigation = useNavigation();
-
   const [name, setName] = useState("");
   const [specialties, setSpecialties] = useState<Swimming[]>([]);
   const [availableSpecialties, setAvailableSpecialties] = useState(
     Object.values(Swimming)
   );
-  const [availabilities, setAvailabilities] = useState<
-    { day: DaysOfWeek; time: string }[]
-  >([]);
+  const [availabilities, setAvailabilities] = useState<Availability[]>(
+    Array(7).fill(-1)
+  );
   const [availableDays, setAvailableDays] = useState(Object.values(DaysOfWeek));
+  const [selectedDay, setSelectedDay] = useState<DaysOfWeek | null>(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const navigation = useNavigation();
 
-  // Fetch instructors from the backend
   useEffect(() => {
     const fetchInstructors = async () => {
       const data = await InstructorService.getAllInstructors();
@@ -55,34 +63,65 @@ const InstructorScreen: React.FC = () => {
     setAvailableSpecialties([...availableSpecialties, specialty]);
   };
 
-  const handleAddAvailability = (day: DaysOfWeek, time: string) => {
-    setAvailabilities([...availabilities, { day, time }]);
-    setAvailableDays(availableDays.filter((d) => d !== day));
+  const handleAddAvailability = () => {
+    if (selectedDay && startTime && endTime) {
+      const dayIndex = Object.values(DaysOfWeek).indexOf(selectedDay);
+      const newAvailability = new StartAndEndTime(startTime, endTime);
+      const updatedAvailabilities = [...availabilities];
+      updatedAvailabilities[dayIndex] = newAvailability;
+
+      setAvailabilities(updatedAvailabilities);
+      setAvailableDays(availableDays.filter((d) => d !== selectedDay));
+      setSelectedDay(null); // Reset selection
+      setStartTime(null);
+      setEndTime(null);
+    }
   };
 
-  const handleRemoveAvailability = (day: DaysOfWeek) => {
-    setAvailabilities(availabilities.filter((a) => a.day !== day));
-    setAvailableDays([...availableDays, day]);
+  const handleRemoveAvailability = (dayIndex: number) => {
+    const updatedAvailabilities = [...availabilities];
+    updatedAvailabilities[dayIndex] = -1;
+
+    // Get the removed day and place it back in the correct position
+    const removedDay = Object.values(DaysOfWeek)[dayIndex];
+    const updatedAvailableDays = [...availableDays, removedDay].sort(
+      (a, b) =>
+        Object.values(DaysOfWeek).indexOf(a) -
+        Object.values(DaysOfWeek).indexOf(b)
+    );
+
+    setAvailabilities(updatedAvailabilities);
+    setAvailableDays(updatedAvailableDays);
   };
 
-  const handleCardPress = (instructor: Instructor | null) => {
-    setSelectedInstructor(instructor);
-    setModalVisible(true);
-    if (instructor) {
-      setName(instructor.name);
-      setSpecialties(instructor.specialties);
-      setAvailabilities(
-        instructor.availabilities
-          .filter((a) => a !== -1)
-          .map((a) => ({
-            day: availableDays.find(
-              (_, i) => instructor.availabilities[i] !== -1
-            )!,
-            time: `${new Date(a.startTime).getHours()}:00 - ${new Date(
-              a.endTime
-            ).getHours()}:00`,
-          }))
+  const handleSaveInstructor = async () => {
+    if (selectedInstructor) {
+      await InstructorService.updateInstructor(
+        selectedInstructor.instructorId!,
+        {
+          instructorId: selectedInstructor.instructorId,
+          name,
+          specialties,
+          availabilities,
+        }
       );
+    } else {
+      const newInstructor: NewInstructor = new NewInstructor(
+        name,
+        specialties,
+        availabilities
+      );
+      await InstructorService.createInstructor(newInstructor);
+    }
+    setModalVisible(false);
+  };
+
+  const handleDeleteInstructor = async () => {
+    if (selectedInstructor?.instructorId) {
+      await InstructorService.deleteInstructorById(
+        selectedInstructor.instructorId
+      );
+      setModalVisible(false);
     }
   };
 
@@ -90,38 +129,43 @@ const InstructorScreen: React.FC = () => {
     <View style={styles.container}>
       <ScrollView horizontal contentContainerStyle={styles.scrollContainer}>
         <CustomCard
-          title="+"
-          onPress={() => handleCardPress(null)}
+          title="Add Instructor"
+          onPress={() => setModalVisible(true)}
           style={styles.card}
-        >
-          <Text>Add Instructor</Text>
-        </CustomCard>
+        />
         {instructors.map((instructor) => (
           <CustomCard
             key={instructor.instructorId}
             title={instructor.name}
             style={styles.card}
-            onPress={() => handleCardPress(instructor)}
+            onPress={() => {
+              setSelectedInstructor(instructor);
+              setModalVisible(true);
+              setName(instructor.name);
+              setSpecialties(instructor.specialties);
+              setAvailabilities(instructor.availabilities);
+            }}
           >
+            <Text>System ID: {instructor.instructorId}</Text>
             <Text>Specialties: {instructor.specialties.join(", ")}</Text>
-            <Text>ID: {instructor.instructorId}</Text>
           </CustomCard>
         ))}
       </ScrollView>
 
       <CustomModal
         visible={modalVisible}
-        title="Instructor Details"
+        title={selectedInstructor ? "Edit Instructor" : "Add New Instructor"}
         onClose={() => setModalVisible(false)}
       >
         <View>
           {selectedInstructor?.instructorId && (
-            <Text>ID: {selectedInstructor.instructorId}</Text>
+            <Text>System ID: {selectedInstructor.instructorId}</Text>
           )}
           <TextInput
             value={name}
             onChangeText={setName}
             placeholder="Enter Instructor Name"
+            placeholderTextColor="#555" // Darker placeholder text
             style={styles.input}
           />
           <View>
@@ -141,33 +185,84 @@ const InstructorScreen: React.FC = () => {
                 onPress={() => handleRemoveSpecialty(specialty)}
                 style={styles.specialtyBubble}
               >
-                {specialty} X
+                <Text style={styles.centeredText}>
+                  {specialty} <Text style={styles.xButton}>X</Text>
+                </Text>
               </Button>
             ))}
           </View>
           <View>
-            <Text>Availabilities:</Text>
-            {availableDays.map((day) => (
-              <Button
-                key={day}
-                onPress={() => handleAddAvailability(day, "08:00 - 10:00")}
-              >
-                {day}
-              </Button>
-            ))}
-            {availabilities.map((availability) => (
-              <Button
-                key={availability.day}
-                mode="contained"
-                onPress={() => handleRemoveAvailability(availability.day)}
-                style={styles.availabilityBubble}
-              >
-                {availability.day} {availability.time} X
-              </Button>
-            ))}
+            <Text>Availability:</Text>
+            <ScrollView>
+              <Text>Select Day:</Text>
+              {availableDays.map((day) => (
+                <Button key={day} onPress={() => setSelectedDay(day)}>
+                  {day}
+                </Button>
+              ))}
+              {selectedDay && (
+                <>
+                  <Text>Day Selected: {selectedDay}</Text>
+                  <Button onPress={() => setShowStartPicker(true)}>
+                    Select Start Time
+                  </Button>
+                  {showStartPicker && (
+                    <DateTimePicker
+                      value={startTime || new Date()}
+                      mode="time"
+                      is24Hour={true}
+                      onChange={(event, date) => {
+                        setShowStartPicker(false);
+                        if (date) setStartTime(date);
+                      }}
+                    />
+                  )}
+                  <Button onPress={() => setShowEndPicker(true)}>
+                    Select End Time
+                  </Button>
+                  {showEndPicker && (
+                    <DateTimePicker
+                      value={endTime || new Date()}
+                      mode="time"
+                      is24Hour={true}
+                      onChange={(event, date) => {
+                        setShowEndPicker(false);
+                        if (date) setEndTime(date);
+                      }}
+                    />
+                  )}
+                  <Button onPress={handleAddAvailability}>
+                    Add Availability
+                  </Button>
+                </>
+              )}
+            </ScrollView>
+            {availabilities.map((availability, index) =>
+              availability !== -1 ? (
+                <Button
+                  key={index}
+                  onPress={() => handleRemoveAvailability(index)}
+                  style={styles.availabilityBubble}
+                >
+                  {Object.values(DaysOfWeek)[index]}{" "}
+                  {new Date(availability.startTime).toLocaleTimeString()} -{" "}
+                  {new Date(availability.endTime).toLocaleTimeString()}{" "}
+                  <Text style={styles.xButton}>X</Text>
+                </Button>
+              ) : null
+            )}
           </View>
+          <Button mode="contained" onPress={handleSaveInstructor}>
+            {selectedInstructor ? "Update Instructor" : "Add Instructor"}
+          </Button>
+          {selectedInstructor && (
+            <Button mode="text" onPress={handleDeleteInstructor} color="red">
+              Delete Instructor
+            </Button>
+          )}
         </View>
       </CustomModal>
+
       <Button
         mode="outlined"
         onPress={() => navigation.goBack()}
@@ -202,14 +297,27 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginVertical: 10,
+    color: "#333", // Darker input text
   },
   specialtyBubble: {
-    backgroundColor: "#00D5FA",
+    backgroundColor: "#7e57c2",
     marginVertical: 5,
+    alignItems: "center", // Center specialty text
+    justifyContent: "center",
+  },
+  centeredText: {
+    textAlign: "center",
+    color: "white",
   },
   availabilityBubble: {
     backgroundColor: "#7e57c2",
     marginVertical: 5,
+    paddingHorizontal: 10,
+  },
+  xButton: {
+    marginLeft: 10,
+    color: "white",
+    fontWeight: "bold",
   },
 });
 
