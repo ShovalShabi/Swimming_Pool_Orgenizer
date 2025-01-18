@@ -25,8 +25,13 @@ declare module "@env" {
   export const EXPO_BCAKEND_SERVER_IP: string;
 
   /**
-   * The backend server port number.
+   * The backend server port number as development environment.
    * @type {string}
    */
-  export const EXPO_BCAKEND_SERVER_PORT: string;
+  export const EXPO_BCAKEND_SERVER_DEV_PORT: string;
+  /**
+   * The backend server port number as production environment.
+   * @type {string}
+   */
+  export const EXPO_BCAKEND_SERVER_PROD_PORT: string;
 }
