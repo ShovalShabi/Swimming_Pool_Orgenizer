@@ -4,15 +4,29 @@ import { TouchableOpacity, Text, StyleSheet } from "react-native";
 interface Props {
   time: string;
   isHighlighted: boolean;
+  hasLessons: boolean;
   onPress: () => void;
 }
 
-const CalendarCell: React.FC<Props> = ({ time, isHighlighted, onPress }) => (
+const CalendarCell: React.FC<Props> = ({
+  time,
+  isHighlighted,
+  hasLessons,
+  onPress,
+}) => (
   <TouchableOpacity
-    style={[styles.cell, isHighlighted && styles.highlighted]}
+    style={[
+      styles.cell,
+      isHighlighted && styles.highlighted,
+      hasLessons && styles.withLessons,
+    ]}
     onPress={onPress}
   >
-    <Text style={styles.text}>{time}</Text>
+    {hasLessons ? (
+      <Text style={styles.lessonIndicator}>Lessons</Text>
+    ) : (
+      <Text style={styles.text}></Text>
+    )}
   </TouchableOpacity>
 );
 
@@ -27,9 +41,17 @@ const styles = StyleSheet.create({
   highlighted: {
     backgroundColor: "#d0f0fd",
   },
+  withLessons: {
+    backgroundColor: "#c8e6c9", // Light green to indicate lessons
+  },
   text: {
     fontSize: 14,
     color: "#333",
+  },
+  lessonIndicator: {
+    fontSize: 14,
+    color: "#1b5e20", // Dark green to indicate lessons
+    fontWeight: "bold",
   },
 });
 
