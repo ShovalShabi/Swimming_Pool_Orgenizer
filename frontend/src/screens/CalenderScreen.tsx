@@ -110,6 +110,8 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const goToPreviousWeek = () => setCurrentWeekOffset((prev) => prev - 7);
   const goToNextWeek = () => setCurrentWeekOffset((prev) => prev + 7);
 
+  const today = new Date();
+
   return (
     <View style={styles.container}>
       <View style={styles.navigation}>
@@ -137,13 +139,16 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         {Object.keys(DaysOfWeek).map((key, index) => {
           const day = DaysOfWeek[key as keyof typeof DaysOfWeek];
           const date = weekDates[index];
+
+          const isToday =
+            date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear();
+
           return (
             <View
               key={day}
-              style={[
-                styles.column,
-                index === new Date().getDay() ? styles.highlightedColumn : null,
-              ]}
+              style={[styles.column, isToday ? styles.highlightedColumn : null]}
             >
               <Text style={styles.dayHeader}>
                 {day} {date.getDate()}/{date.getMonth() + 1}
@@ -161,7 +166,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   <CalendarCell
                     key={`${day}-${hour}`}
                     time={`${hour + 6}:00`}
-                    isHighlighted={hour + 6 === new Date().getHours()}
+                    isHighlighted={isToday && hour + 6 === today.getHours()}
                     hasLessons={cellLessons.length > 0}
                     onPress={() => handleCellPress(day, `${hour + 6}:00`, date)}
                   />
