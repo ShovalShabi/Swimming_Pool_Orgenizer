@@ -37,15 +37,63 @@ export default class InstructorRepository
     startTime: Date,
     endTime: Date
   ): Promise<Instructor[]> {
-    const instructorDocs = await InstructorModel.find({
-      [`availabilities.${day}`]: {
-        $not: { $eq: -1 }, // Ensure the day is not -1 (instructor is available)
-      },
-      [`availabilities.${day}.startTime`]: { $lte: startTime }, // Instructor's start time is earlier or equal to the requested start time
-      [`availabilities.${day}.endTime`]: { $gte: endTime }, // Instructor's end time is later or equal to the requested end time
+    const requestedStartTime = {
+      hours: startTime.getHours(),
+      minutes: startTime.getMinutes(),
+      seconds: startTime.getSeconds(),
+    };
+
+    const requestedEndTime = {
+      hours: endTime.getHours(),
+      minutes: endTime.getMinutes(),
+      seconds: endTime.getSeconds(),
+    };
+
+    const instructorDocs = (
+      await InstructorModel.find({
+        [`availabilities.${day}`]: {
+          $not: { $eq: -1 }, // Ensure the day is not -1 (instructor is available)
+        },
+      })
+    ).filter((doc: IInstructor) => {
+      const availability = (doc as any).availabilities[day]; // Use `as any` if `availabilities` isn't explicitly typed in your model
+
+      if (!availability || availability === -1) {
+        return false; // Skip unavailable instructors
+      }
+
+      const startTimeComponents = {
+        hours: new Date(availability.startTime).getHours(),
+        minutes: new Date(availability.startTime).getMinutes(),
+        seconds: new Date(availability.startTime).getSeconds(),
+      };
+
+      const endTimeComponents = {
+        hours: new Date(availability.endTime).getHours(),
+        minutes: new Date(availability.endTime).getMinutes(),
+        seconds: new Date(availability.endTime).getSeconds(),
+      };
+
+      const startCondition =
+        startTimeComponents.hours < requestedStartTime.hours ||
+        (startTimeComponents.hours === requestedStartTime.hours &&
+          startTimeComponents.minutes < requestedStartTime.minutes) ||
+        (startTimeComponents.hours === requestedStartTime.hours &&
+          startTimeComponents.minutes === requestedStartTime.minutes &&
+          startTimeComponents.seconds <= requestedStartTime.seconds);
+
+      const endCondition =
+        endTimeComponents.hours > requestedEndTime.hours ||
+        (endTimeComponents.hours === requestedEndTime.hours &&
+          endTimeComponents.minutes > requestedEndTime.minutes) ||
+        (endTimeComponents.hours === requestedEndTime.hours &&
+          endTimeComponents.minutes === requestedEndTime.minutes &&
+          endTimeComponents.seconds >= requestedEndTime.seconds);
+
+      return startCondition && endCondition;
     });
 
-    return instructorDocs.map((doc) => Instructor.fromModel(doc));
+    return instructorDocs.map((doc: IInstructor) => Instructor.fromModel(doc));
   }
 
   async update(
