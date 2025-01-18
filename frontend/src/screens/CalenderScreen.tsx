@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -9,18 +9,14 @@ import {
 import { Text, Button } from "react-native-paper";
 import CustomModal from "../components/Modal";
 import CalendarCell from "../components/CalendarCell";
+import { DaysOfWeek } from "../utils/days-week-enum.utils";
+import LessonService from "../services/lesson.service";
+import Lesson from "../dto/lesson/lesson.dto";
+import InstructorService from "../services/instructor.service";
+import Instructor from "../dto/instructor/instructor.dto";
 
-const daysOfWeek = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const { width, height } = Dimensions.get("window");
 
-// Helper function to calculate the dates for the current week
 const getWeekDates = (offset: number) => {
   const today = new Date();
   const currentDay = today.getDay();
@@ -34,21 +30,80 @@ const getWeekDates = (offset: number) => {
   });
 };
 
-const { width, height } = Dimensions.get("window");
-
 const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [lessonModalVisible, setLessonModalVisible] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{
     day: string;
     hour: string;
+    lessons: Lesson[];
+    date: Date;
   } | null>(null);
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [availableInstructors, setAvailableInstructors] = useState<
+    Instructor[]
+  >([]);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const weekDates = getWeekDates(currentWeekOffset); // Get the dates for the current week
-  const today = new Date().toDateString(); // Today's date as a string for comparison
+  const weekDates = getWeekDates(currentWeekOffset);
 
-  const handleCellPress = (day: string, hour: string) => {
-    setSelectedCell({ day, hour });
+  const fetchLessons = async () => {
+    const start = weekDates[0];
+    const end = new Date(weekDates[6].getTime() + 24 * 60 * 60 * 1000);
+
+    const fetchedLessons = await LessonService.getLessonsWithinRange(
+      start,
+      end
+    );
+    setLessons(fetchedLessons);
+  };
+
+  const fetchAvailableInstructors = async (
+    day: number,
+    startTime: Date,
+    endTime: Date
+  ) => {
+    try {
+      const instructors = await InstructorService.getInstructorsByAvailability(
+        day,
+        startTime,
+        endTime
+      );
+      console.log(instructors);
+      setAvailableInstructors(instructors);
+      setErrorMessage(
+        instructors.length ? "" : "No instructors available for this time."
+      );
+    } catch (error) {
+      setErrorMessage("Error fetching instructors.");
+    }
+  };
+
+  useEffect(() => {
+    fetchLessons();
+  }, [currentWeekOffset]);
+
+  const handleCellPress = async (day: string, hour: string, date: Date) => {
+    const cellLessons = lessons.filter((lesson) => {
+      const lessonDate = new Date(lesson.startAndEndTime.startTime);
+      return (
+        lessonDate.toDateString() === date.toDateString() &&
+        lessonDate.getHours() === parseInt(hour.split(":")[0], 10)
+      );
+    });
+
+    if (!cellLessons.length) {
+      const startTime = new Date(date);
+      startTime.setHours(parseInt(hour.split(":")[0], 10), 0, 0);
+
+      const endTime = new Date(startTime);
+      endTime.setHours(startTime.getHours() + 1);
+
+      await fetchAvailableInstructors(date.getDay(), startTime, endTime);
+    }
+
+    setSelectedCell({ day, hour, lessons: cellLessons, date });
     setModalVisible(true);
   };
 
@@ -57,7 +112,6 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Week Navigation */}
       <View style={styles.navigation}>
         <Button mode="outlined" onPress={goToPreviousWeek}>
           {"<"}
@@ -67,52 +121,57 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </Button>
       </View>
 
-      {/* Calendar Grid */}
       <ScrollView style={styles.scrollable} contentContainerStyle={styles.grid}>
-        <View style={styles.hoursColumn}>
-          {Array.from({ length: 18 }, (_, i) => {
-            const hour = i + 6; // Start from 06:00
-            return (
-              <View key={hour} style={styles.hourCell}>
-                <Text style={styles.hourLabel}>{hour}:00</Text>
-              </View>
-            );
-          })}
+        <View style={styles.column}>
+          <View>
+            <Text style={styles.dayHeader}>Hours\Days</Text>
+          </View>
+          {Array.from({ length: 18 }, (_, i) => (
+            <View key={i} style={styles.column}>
+              <Text style={styles.hourLabel}>{i + 6}:00</Text>
+              <View style={styles.hourLine} />
+            </View>
+          ))}
         </View>
-        {weekDates.map((date, index) => (
-          <View
-            key={daysOfWeek[index]}
-            style={[
-              styles.column,
-              date.toDateString() === today ? styles.highlightedColumn : null,
-            ]}
-          >
-            <Text
+
+        {Object.keys(DaysOfWeek).map((key, index) => {
+          const day = DaysOfWeek[key as keyof typeof DaysOfWeek];
+          const date = weekDates[index];
+          return (
+            <View
+              key={day}
               style={[
-                styles.dayHeader,
-                date.toDateString() === today ? styles.todayHeader : null,
+                styles.column,
+                index === new Date().getDay() ? styles.highlightedColumn : null,
               ]}
             >
-              {daysOfWeek[index]} {date.getDate()}/{date.getMonth() + 1}
-            </Text>
-            {Array.from({ length: 18 }).map((_, hour) => (
-              <CalendarCell
-                key={`${daysOfWeek[index]}-${hour}`}
-                time={`${hour + 6}:00`} // Start from 06:00
-                isHighlighted={
-                  hour + 6 === new Date().getHours() &&
-                  date.toDateString() === today
-                }
-                onPress={() =>
-                  handleCellPress(daysOfWeek[index], `${hour + 6}:00`)
-                }
-              />
-            ))}
-          </View>
-        ))}
+              <Text style={styles.dayHeader}>
+                {day} {date.getDate()}/{date.getMonth() + 1}
+              </Text>
+              {Array.from({ length: 18 }).map((_, hour) => {
+                const cellLessons = lessons.filter((lesson) => {
+                  const lessonDate = new Date(lesson.startAndEndTime.startTime);
+                  return (
+                    lessonDate.toDateString() === date.toDateString() &&
+                    lessonDate.getHours() === hour + 6
+                  );
+                });
+
+                return (
+                  <CalendarCell
+                    key={`${day}-${hour}`}
+                    time={`${hour + 6}:00`}
+                    isHighlighted={hour + 6 === new Date().getHours()}
+                    hasLessons={cellLessons.length > 0}
+                    onPress={() => handleCellPress(day, `${hour + 6}:00`, date)}
+                  />
+                );
+              })}
+            </View>
+          );
+        })}
       </ScrollView>
 
-      {/* Modal for Cell Details */}
       <CustomModal
         visible={modalVisible}
         title={`Details for ${selectedCell?.day || ""}, ${
@@ -120,9 +179,26 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         }`}
         onClose={() => setModalVisible(false)}
       >
-        <Text>Lesson Details</Text>
+        {errorMessage ? (
+          <Text>{errorMessage}</Text>
+        ) : selectedCell?.lessons.length ? (
+          selectedCell.lessons.map((lesson) => (
+            <Button
+              key={lesson.lessonId}
+              onPress={() => {
+                setModalVisible(false);
+                setLessonModalVisible(true);
+              }}
+            >
+              {lesson.typeLesson} -{" "}
+              {new Date(lesson.startAndEndTime.startTime).toLocaleTimeString()}
+            </Button>
+          ))
+        ) : (
+          <Text>No lessons. Add a new one?</Text>
+        )}
       </CustomModal>
-      {/* Back Button */}
+
       <Button
         mode="outlined"
         onPress={() => navigation.goBack()}
@@ -137,7 +213,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: StatusBar.currentHeight || 24, // Add padding for status bar
+    paddingTop: StatusBar.currentHeight || 24,
     backgroundColor: "#f6f6f6",
   },
   backButton: {
@@ -157,18 +233,27 @@ const styles = StyleSheet.create({
   },
   hoursColumn: {
     width: width * 0.15,
-    backgroundColor: "#d1c4e9", // Darker purple for the hours column
+    backgroundColor: "#d1c4e9",
     justifyContent: "flex-start",
-    paddingTop: height / 40, // Align hours with rows
+    paddingTop: height / 40,
   },
   hourCell: {
-    height: height / 20, // Dynamic height for uniformity
+    height: height / 20,
     justifyContent: "center",
+    position: "relative",
   },
   hourLabel: {
     textAlign: "center",
     fontSize: 14,
     color: "#555",
+  },
+  hourLine: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "#ddd",
   },
   column: {
     flex: 1,
@@ -176,19 +261,15 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
   highlightedColumn: {
-    backgroundColor: "#bbdefb", // Light blue for today's column
+    backgroundColor: "#bbdefb",
   },
   dayHeader: {
     textAlign: "center",
     fontWeight: "bold",
     marginBottom: 5,
-    backgroundColor: "#e1bee7", // Light purple background for headers
+    backgroundColor: "#e1bee7",
     paddingVertical: 5,
     width: "100%",
-  },
-  todayHeader: {
-    backgroundColor: "#7e57c2", // Stronger blue-purple for today's header
-    color: "#fff", // White text for contrast
   },
 });
 
