@@ -51,6 +51,18 @@ const InstructorScreen: React.FC = () => {
     fetchInstructors();
   }, []);
 
+  const clearFields = () => {
+    setName("");
+    setSelectedInstructor(null);
+    setAvailableDays(Object.values(DaysOfWeek));
+    setAvailabilities(Array(7).fill(-1));
+    setAvailableSpecialties(Object.values(Swimming));
+    setSpecialties([]);
+    setSelectedDay(null);
+    setShowStartPicker(false);
+    setShowEndPicker(false);
+  };
+
   const handleAddSpecialty = (specialty: Swimming) => {
     setSpecialties([...specialties, specialty]);
     setAvailableSpecialties(
@@ -73,7 +85,9 @@ const InstructorScreen: React.FC = () => {
       setAvailabilities(updatedAvailabilities);
       setAvailableDays(availableDays.filter((d) => d !== selectedDay));
       setSelectedDay(null);
+      setShowStartPicker(false);
       setStartTime(null);
+      setShowEndPicker(false);
       setEndTime(null);
     }
   };
@@ -112,6 +126,9 @@ const InstructorScreen: React.FC = () => {
       );
       await InstructorService.createInstructor(newInstructor);
     }
+    const instructors = await InstructorService.getAllInstructors();
+    setInstructors(instructors);
+    clearFields();
     setModalVisible(false);
   };
 
@@ -120,6 +137,9 @@ const InstructorScreen: React.FC = () => {
       await InstructorService.deleteInstructorById(
         selectedInstructor.instructorId
       );
+      clearFields();
+      const instructors = await InstructorService.getAllInstructors();
+      setInstructors(instructors);
       setModalVisible(false);
     }
   };
@@ -143,6 +163,20 @@ const InstructorScreen: React.FC = () => {
               setName(instructor.name);
               setSpecialties(instructor.specialties);
               setAvailabilities(instructor.availabilities);
+
+              // Remove instructor's specialties from availableSpecialties
+              const updatedAvailableSpecialties = Object.values(
+                Swimming
+              ).filter(
+                (specialty) => !instructor.specialties.includes(specialty)
+              );
+              setAvailableSpecialties(updatedAvailableSpecialties);
+
+              // Update availableDays to exclude already set availabilities
+              const updatedAvailableDays = Object.values(DaysOfWeek).filter(
+                (_, index) => instructor.availabilities[index] === -1
+              );
+              setAvailableDays(updatedAvailableDays);
             }}
           >
             <Text style={styles.systemId}>
@@ -156,7 +190,10 @@ const InstructorScreen: React.FC = () => {
       <CustomModal
         visible={modalVisible}
         title={selectedInstructor ? "Edit Instructor" : "Add New Instructor"}
-        onClose={() => setModalVisible(false)}
+        onClose={() => {
+          clearFields();
+          setModalVisible(false);
+        }}
       >
         <ScrollView style={styles.modalScrollable}>
           <View>
