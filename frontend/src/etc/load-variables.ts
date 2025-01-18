@@ -1,8 +1,8 @@
 import {
-  EXPO_PORT,
   EXPO_ENV,
   EXPO_BCAKEND_SERVER_IP,
-  EXPO_BCAKEND_SERVER_PORT,
+  EXPO_BCAKEND_SERVER_DEV_PORT,
+  EXPO_BCAKEND_SERVER_PROD_PORT,
 } from "@env";
 
 /**
@@ -21,20 +21,20 @@ import {
  */
 const getEnvVariables = () => {
   // Validate required variables or provide default values
-  let port = 0; // A default port for testing (OS assigns the port)
+  let backendPort = 0; // A default port for testing (OS assigns the port)
   const env = EXPO_ENV || "dev"; // Default to 'dev' if EXPO_ENV is not defined
 
   if (env === "dev") {
-    port = parseInt(EXPO_PORT || "6002", 10); // Default to 6002 if EXPO_PORT is not defined
+    backendPort = parseInt(EXPO_BCAKEND_SERVER_DEV_PORT || "6001", 10); // Default to 6002 if EXPO_PORT is not defined
   } else if (env === "prod") {
-    port = parseInt(EXPO_PORT || "7002", 10); // Default to 7002 if EXPO_PORT is not defined
+    backendPort = parseInt(EXPO_BCAKEND_SERVER_PROD_PORT || "6000", 10); // Default to 7002 if EXPO_PORT is not defined
   } else {
     // Testing the application, using the services in dev mode, port will remain 0
   }
-  const backendServerURL = `http://${EXPO_BCAKEND_SERVER_IP}:${EXPO_BCAKEND_SERVER_PORT}`;
+  const backendServerURL = `http://${EXPO_BCAKEND_SERVER_IP}:${backendPort}`;
 
   return {
-    port,
+    backendPort,
     env,
     backendServerURL,
   };
