@@ -1,11 +1,11 @@
-import React, { Children } from "react";
+import React from "react";
 import { Text, TouchableOpacity, StyleSheet, ViewStyle } from "react-native";
 
 interface CustomCardProps {
   title: string;
   description?: string;
   onPress: () => void;
-  style?: ViewStyle; // Accept additional styles
+  style?: ViewStyle | ViewStyle[]; // Accept either a single style or an array of styles
   children?: React.ReactNode;
 }
 
@@ -18,7 +18,7 @@ const CustomCard: React.FC<CustomCardProps> = ({
 }) => (
   <TouchableOpacity onPress={onPress} style={[styles.card, style]}>
     <Text style={styles.title}>{title}</Text>
-    <Text style={styles.description}>{description}</Text>
+    {description && <Text style={styles.description}>{description}</Text>}
     {children}
   </TouchableOpacity>
 );
