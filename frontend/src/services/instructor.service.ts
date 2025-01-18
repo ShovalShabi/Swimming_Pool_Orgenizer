@@ -63,4 +63,10 @@ export default class InstructorService {
     });
     return response.data;
   }
+
+  // Retrieve All Instructors
+  static async getAllInstructors(): Promise<Instructor[]> {
+    const response = await axios.get<Instructor[]>(BASE_URL);
+    return response.data;
+  }
 }
