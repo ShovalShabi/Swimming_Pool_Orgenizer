@@ -44,8 +44,8 @@ export default class LessonService {
 
   // Get All Lessons Between Date Range
   static async getLessonsWithinRange(
-    start: string,
-    end: string
+    start: Date,
+    end: Date
   ): Promise<Lesson[]> {
     const response = await axios.get<Lesson[]>(BASE_URL, {
       params: { start, end },
@@ -56,7 +56,7 @@ export default class LessonService {
   // Get Instructor's Lessons by Specific Date
   static async getLessonsOfInstructorByDay(
     instructorId: string,
-    day: string
+    day: Date
   ): Promise<Lesson[]> {
     const response = await axios.get<Lesson[]>(
       `${BASE_URL}/instructor/${instructorId}/day`,

@@ -55,8 +55,8 @@ export default class InstructorService {
   // Get Instructors by Availability
   static async getInstructorsByAvailability(
     day: number,
-    startTime: string,
-    endTime: string
+    startTime: Date,
+    endTime: Date
   ): Promise<Instructor[]> {
     const response = await axios.get<Instructor[]>(`${BASE_URL}/availability`, {
       params: { day, startTime, endTime },
