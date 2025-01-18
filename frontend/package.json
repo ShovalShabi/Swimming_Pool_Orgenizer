@@ -7,7 +7,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "run-dev": "cross-env EXPO_ENV=dev expo start -c"
   },
   "dependencies": {
     "@babel/runtime": "^7.26.0",
@@ -34,6 +35,7 @@
     "@types/lodash": "^4.17.14",
     "@types/react": "~18.3.12",
     "@types/react-native-vector-icons": "^6.4.18",
+    "cross-env": "^7.0.3",
     "typescript": "^5.7.3"
   },
   "private": true
