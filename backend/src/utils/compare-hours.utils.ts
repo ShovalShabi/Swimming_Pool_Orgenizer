@@ -24,15 +24,15 @@
 const compareTime = (date1: Date, date2: Date): -1 | 0 | 1 => {
   // Extract hours, minutes, and seconds
   const time1 = {
-    hours: date1.getUTCHours(),
-    minutes: date1.getUTCMinutes(),
-    seconds: date1.getUTCSeconds(),
+    hours: date1.getHours(),
+    minutes: date1.getMinutes(),
+    seconds: date1.getSeconds(),
   };
 
   const time2 = {
-    hours: date2.getUTCHours(),
-    minutes: date2.getUTCMinutes(),
-    seconds: date2.getUTCSeconds(),
+    hours: date2.getHours(),
+    minutes: date2.getMinutes(),
+    seconds: date2.getSeconds(),
   };
 
   // Compare hours
