@@ -54,6 +54,9 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [selectedInstructor, setSelectedInstructor] =
     useState<Instructor | null>(null);
   const [studentName, setStudentName] = useState("");
+  const [availableSpecialties, setAvailableSpecialties] = useState<Swimming[]>(
+    [] as Swimming[]
+  );
   const [specialties, setSpecialties] = useState<Swimming[]>([] as Swimming[]);
   const [lessonsWithinCell, setLessonsWithinCell] = useState<Lesson[]>(
     [] as Lesson[]
@@ -70,6 +73,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [availableInstructorsInCell, setAvailableInstructorsInCell] = useState<
     Instructor[]
   >([]);
+  const [modalAnchor, setModalAnchor] = useState(false);
   const [studntsArr, setStudentsArr] = useState<Student[]>([]);
   const [currentStudent, setCurentStudent] = useState<Student | null>(null);
   const [studnetSpecialties, setStudnetSpecialties] = useState<Swimming[]>(
@@ -122,28 +126,49 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   //   }
   // }
 
-  const handleChooseInstructor = (instructor: Instructor) => {
-    setAvailableInstructors(
-      availableInstructors.filter((i) => i !== instructor)
-    );
-    setSelectedInstructor(selectedInstructor);
-    setSpecialties(instructor.specialties);
-  };
-
-  const handleRemoveInstructor = (instructor: Instructor) => {
-    setAvailableInstructors([...availableInstructors, instructor]);
+  const clearFields = () => {
+    setModalVisible(false);
+    setAvailableInstructors([]);
+    setModalAnchor(false);
+    setAvailableSpecialties([]);
+    setSpecialties([]);
     setSelectedInstructor(null);
+    setStartHourAndDate(null);
+    setShowStartPicker(false);
+    setEndHourAndDate(null);
+    setShowEndPicker(false);
+    setStudentName("");
+    setStartAndEndTime(null);
+  };
+  const handleChooseInstructor = (instructor: Instructor) => {
+    setModalAnchor(true);
+    setSelectedInstructor(instructor);
+    setAvailableInstructors(
+      availableInstructors.filter(
+        (ins) => ins.instructorId !== instructor.instructorId
+      )
+    );
+    setAvailableSpecialties(instructor.specialties);
     setSpecialties([]);
   };
 
-  const handleRemoveSpecialty = (specialty: Swimming) => {
-    setSpecialties(specialties.filter((s) => s !== specialty));
-    setSpecialties([...specialties, specialty]);
+  const handleRemoveInstructor = () => {
+    setModalAnchor(false);
+    setAvailableInstructors([...availableInstructors, selectedInstructor!]);
+    setSelectedInstructor(null);
+    setAvailableSpecialties([]);
   };
 
-  const handleAddSpecialty = (specialty: Swimming) => {
-    setSpecialties([...specialties, specialty]);
+  const handleRemoveSpecialtyFromLesson = (specialty: Swimming) => {
+    setAvailableSpecialties([...availableSpecialties, specialty]);
     setSpecialties(specialties.filter((s) => s !== specialty));
+  };
+
+  const handleAddSpecialtyToLesson = (specialty: Swimming) => {
+    setAvailableSpecialties(
+      availableSpecialties.filter((s) => s !== specialty)
+    );
+    setSpecialties([...specialties, specialty]);
   };
 
   const handleChooseLessonType = (value: string) => {
@@ -289,174 +314,175 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         title={`Details for ${selectedCell?.day || ""}, ${
           selectedCell?.hour || ""
         }`}
-        onClose={() => setModalVisible(false)}
+        onClose={() => clearFields()}
       >
-        {!availableInstructors.length ? (
-          <Text>{errorMessage}</Text>
-        ) : (
-          <ScrollView>
-            <View>
-              <Button
-                key={"OpenExisitnglessons Section"}
-                mode="contained"
-                onPress={() => {
-                  console.log("donothing");
-                }}
-                style={styles.specialtyBubble}
-              >
-                Edit Lessons
-              </Button>
-            </View>
-            <HorizontalDivider color="#888" thickness={2} marginVertical={15} />
-            <View>
-              <Text>Would You Like to add a New Lesson?</Text>
-              <Button
-                key={"OpenLessonSection"}
-                mode="contained"
-                onPress={toggleAddLessonSection}
-                style={styles.specialtyBubble}
-              >
-                + Add New Lesson
-              </Button>
-              {addNewLessonSection && (
-                <View>
-                  {selectedInstructor?.instructorId && (
-                    <Text style={styles.systemId}>
-                      System ID: {selectedInstructor.instructorId}
-                    </Text>
-                  )}
-                  <TextInput
-                    value={studentName}
-                    onChangeText={setStudentName}
-                    placeholder="Enter Student Name"
-                    placeholderTextColor="#555"
-                    style={styles.input}
-                  />
+        <ScrollView>
+          {!availableInstructors.length && !modalAnchor ? (
+            <Text>{errorMessage}</Text>
+          ) : (
+            <ScrollView>
+              <View>
+                <Button
+                  key={"OpenExisitnglessons Section"}
+                  mode="contained"
+                  onPress={() => {
+                    console.log("donothing");
+                  }}
+                  style={styles.specialtyBubble}
+                >
+                  Edit Lessons
+                </Button>
+              </View>
+              <HorizontalDivider
+                color="#888"
+                thickness={2}
+                marginVertical={15}
+              />
+              <View>
+                <Text>Would You Like to add a New Lesson?</Text>
+                <Button
+                  key={"OpenLessonSection"}
+                  mode="contained"
+                  onPress={toggleAddLessonSection}
+                  style={styles.specialtyBubble}
+                >
+                  + Add New Lesson
+                </Button>
+                {addNewLessonSection && (
                   <View>
-                    <Text>Choose instructor:</Text>
-                    <View style={styles.specialtiesContainer}>
-                      {availableInstructors.map((instructor) => (
-                        <Button
-                          key={instructor.instructorId}
-                          onPress={() => handleChooseInstructor(instructor)}
-                          style={styles.dayButton}
-                        >
-                          {instructor.name}
-                        </Button>
-                      ))}
+                    <View>
+                      <Text>Choose instructor:</Text>
+                      <View style={styles.specialtiesContainer}>
+                        {availableInstructors.map((instructor) => (
+                          <Button
+                            key={instructor.instructorId}
+                            onPress={() => handleChooseInstructor(instructor)}
+                            style={styles.dayButton}
+                          >
+                            {instructor.name}
+                          </Button>
+                        ))}
+                      </View>
+                      <View style={styles.specialtiesContainer}>
+                        {selectedInstructor && (
+                          <Button
+                            key={selectedInstructor.instructorId}
+                            mode="contained"
+                            onPress={() => handleRemoveInstructor()}
+                            style={styles.specialtyBubble}
+                          >
+                            <Text style={styles.centeredText}>
+                              {selectedInstructor.name}{" "}
+                              <Text style={styles.xButton}>X</Text>
+                            </Text>
+                          </Button>
+                        )}
+                      </View>
                     </View>
+                    <View>
+                      <Text>Specialties:</Text>
+                      <View style={styles.specialtiesContainer}>
+                        {availableSpecialties.map((specialty) => (
+                          <Button
+                            key={specialty}
+                            onPress={() =>
+                              handleAddSpecialtyToLesson(specialty)
+                            }
+                            style={styles.dayButton}
+                          >
+                            {specialty}
+                          </Button>
+                        ))}
+                      </View>
+                      <View style={styles.specialtiesContainer}>
+                        {specialties.map((specialty) => (
+                          <Button
+                            key={specialty}
+                            mode="contained"
+                            onPress={() =>
+                              handleRemoveSpecialtyFromLesson(specialty)
+                            }
+                            style={styles.specialtyBubble}
+                          >
+                            <Text style={styles.centeredText}>
+                              {specialty} <Text style={styles.xButton}>X</Text>
+                            </Text>
+                          </Button>
+                        ))}
+                      </View>
+                    </View>
+                    <Text>Select Lesson Type:</Text>
+
                     <View style={styles.specialtiesContainer}>
-                      {selectedInstructor && (
-                        <Button
-                          key={selectedInstructor.instructorId}
-                          mode="contained"
-                          onPress={() =>
-                            handleRemoveInstructor(selectedInstructor)
-                          }
-                          style={styles.specialtyBubble}
-                        >
-                          <Text style={styles.centeredText}>
-                            {selectedInstructor.name}{" "}
-                            <Text style={styles.xButton}>X</Text>
-                          </Text>
-                        </Button>
+                      <RadioButton.Group
+                        onValueChange={handleChooseLessonType} // Pass the handler
+                        value={lessonType}
+                      >
+                        {Object.values(LessonType).map((type) => (
+                          <View key={type} style={styles.option}>
+                            <RadioButton value={type} />
+                            <Text>{type}</Text>
+                          </View>
+                        ))}
+                      </RadioButton.Group>
+                    </View>
+                    <Text>Selected Lesson Type: {lessonType}</Text>
+
+                    <View>
+                      <Text>Lesson Time Frame:</Text>
+                      <Button
+                        onPress={() => setShowStartPicker(!showStartPicker)}
+                        style={styles.toggleButton}
+                      >
+                        Select Start Time
+                      </Button>
+                      {showStartPicker && (
+                        <DateTimePicker
+                          value={startHourAndDate || new Date()}
+                          mode="time"
+                          is24Hour
+                          onChange={(event, date) => {
+                            if (date) setStartHourAndDate(date);
+                          }}
+                        />
                       )}
+                      <Button
+                        onPress={() => setShowEndPicker(!showEndPicker)}
+                        style={styles.toggleButton}
+                      >
+                        Select End Time
+                      </Button>
+                      {showEndPicker && (
+                        <DateTimePicker
+                          value={endHourAndDate || new Date()}
+                          mode="time"
+                          is24Hour
+                          onChange={(event, date) => {
+                            if (date) setEndHourAndDate(date);
+                          }}
+                        />
+                      )}
+                      <Button
+                        onPress={handleAddStartAndEndTime}
+                        style={styles.addButton}
+                        disabled={!startHourAndDate || !endHourAndDate}
+                      >
+                        Add Time Frame
+                      </Button>
                     </View>
+                    <TextInput
+                      value={studentName}
+                      onChangeText={setStudentName}
+                      placeholder="Enter Student Name"
+                      placeholderTextColor="#555"
+                      style={styles.input}
+                    />
                   </View>
-                  <View>
-                    <Text>Specialties:</Text>
-                    <View style={styles.specialtiesContainer}>
-                      {specialties.map((specialty) => (
-                        <Button
-                          key={specialty}
-                          onPress={() => handleAddSpecialty(specialty)}
-                          style={styles.dayButton}
-                        >
-                          {specialty}
-                        </Button>
-                      ))}
-                    </View>
-                    <View style={styles.specialtiesContainer}>
-                      {specialties.map((specialty) => (
-                        <Button
-                          key={specialty}
-                          mode="contained"
-                          onPress={() => handleRemoveSpecialty(specialty)}
-                          style={styles.specialtyBubble}
-                        >
-                          <Text style={styles.centeredText}>
-                            {specialty} <Text style={styles.xButton}>X</Text>
-                          </Text>
-                        </Button>
-                      ))}
-                    </View>
-                  </View>
-
-                  <View style={styles.specialtiesContainer}>
-                    <Text style={styles.title}>Select Lesson Type:</Text>
-                    <RadioButton.Group
-                      onValueChange={handleChooseLessonType} // Pass the handler
-                      value={lessonType}
-                    >
-                      {Object.values(LessonType).map((type) => (
-                        <View key={type} style={styles.option}>
-                          <RadioButton value={type} />
-                          <Text>{type}</Text>
-                        </View>
-                      ))}
-                    </RadioButton.Group>
-                    <Text style={styles.selected}>
-                      Selected Lesson Type: {lessonType}
-                    </Text>
-                  </View>
-
-                  <View>
-                    <Text>Lesson Time Frame:</Text>
-                    <Button
-                      onPress={() => setShowStartPicker(!showStartPicker)}
-                      style={styles.toggleButton}
-                    >
-                      Select Start Time
-                    </Button>
-                    {showStartPicker && (
-                      <DateTimePicker
-                        value={startHourAndDate || new Date()}
-                        mode="time"
-                        is24Hour
-                        onChange={(event, date) => {
-                          if (date) setStartHourAndDate(date);
-                        }}
-                      />
-                    )}
-                    <Button
-                      onPress={() => setShowEndPicker(!showEndPicker)}
-                      style={styles.toggleButton}
-                    >
-                      Select End Time
-                    </Button>
-                    {showEndPicker && (
-                      <DateTimePicker
-                        value={endHourAndDate || new Date()}
-                        mode="time"
-                        is24Hour
-                        onChange={(event, date) => {
-                          if (date) setEndHourAndDate(date);
-                        }}
-                      />
-                    )}
-                    <Button
-                      onPress={handleAddStartAndEndTime}
-                      style={styles.addButton}
-                      disabled={!startHourAndDate || !endHourAndDate}
-                    >
-                      Add Time Frame
-                    </Button>
-                  </View>
-                </View>
-              )}
-            </View>
-          </ScrollView>
-        )}
+                )}
+              </View>
+            </ScrollView>
+          )}
+        </ScrollView>
       </CustomModal>
 
       <Button
