@@ -88,7 +88,9 @@ export default class LessonService implements LessonServiceInterface {
         compareTime(lessonData.startAndEndTime.endTime, instEndTime) > 0 // End time is later than available
       ) {
         logger.error(
-          `Instructor is unavailable for the requested time slot: ${lessonData.startAndEndTime}`
+          `Instructor is unavailable for the requested time slot: ${JSON.stringify(
+            lessonData.startAndEndTime
+          )}`
         );
         // if the instructor is not teaching in those time slots
         throw new createHttpError.BadRequest(
@@ -368,7 +370,7 @@ export default class LessonService implements LessonServiceInterface {
 
     if (
       (lessonData.typeLesson === LessonType.MIXED ||
-        lessonData.typeLesson === LessonType.PRIVATE) &&
+        lessonData.typeLesson === LessonType.PUBLIC) &&
       durationInMinutes !== 60
     ) {
       throw new createHttpError.BadRequest(
@@ -377,11 +379,11 @@ export default class LessonService implements LessonServiceInterface {
     }
 
     if (
-      lessonData.typeLesson === LessonType.PUBLIC &&
+      lessonData.typeLesson === LessonType.PRIVATE &&
       durationInMinutes !== 45
     ) {
       throw new createHttpError.BadRequest(
-        `Invalid duration for PUBLIC lesson. It must last exactly 45 minutes.`
+        `Invalid duration for ${lessonData.typeLesson} lesson. It must last exactly 45 minutes.`
       );
     }
 
