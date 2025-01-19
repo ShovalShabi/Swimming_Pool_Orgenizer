@@ -82,6 +82,10 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const fetchLessons = async () => {
     const start = weekDates[0];
+    //Retriving lesssons from sunday 6:00 in the morining until 00:00 till saturday
+    start.setHours(6);
+    start.setMinutes(0);
+    start.setSeconds(0);
     const end = new Date(weekDates[6].getTime() + 24 * 60 * 60 * 1000);
 
     const fetchedLessons = await LessonService.getLessonsWithinRange(
@@ -264,6 +268,8 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         lessonDate.getHours() === parseInt(hour.split(":")[0], 10)
       );
     });
+    console.log(lessons);
+    console.log(cellLessons.length);
 
     if (!cellLessons.length) {
       const startTime = new Date(date);
@@ -337,9 +343,8 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 return (
                   <CalendarCell
                     key={`${day}-${hour}`}
-                    time={`${hour + 6}:00`}
                     isHighlighted={isToday && hour + 6 === today.getHours()}
-                    hasLessons={cellLessons.length > 0}
+                    cellLessons={cellLessons} // Pass the lessons
                     onPress={() => handleCellPress(day, `${hour + 6}:00`, date)}
                   />
                 );
@@ -363,7 +368,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <ScrollView>
               <View>
                 <Button
-                  key={"OpenExisitnglessons Section"}
+                  key={"OpenExisitnglessonsSection"}
                   mode="contained"
                   onPress={() => {
                     console.log("donothing");
