@@ -8,7 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "run-dev": "cross-env EXPO_ENV=dev expo start -c"
+    "dev": "cross-env EXPO_ENV=dev expo start -c",
+    "prod": "cross-env EXPO_ENV=prod expo start -c"
   },
   "dependencies": {
     "@babel/runtime": "^7.26.0",
