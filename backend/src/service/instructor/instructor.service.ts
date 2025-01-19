@@ -1,10 +1,20 @@
 import createHttpError from "http-errors";
+import path from "path";
 import Instructor from "../../dto/instructor/instructor.dto.js";
 import NewInstructor from "../../dto/instructor/new-instructor.dto.js";
 import InstructorRepositoryInterface from "../../repository/instructor/IInstructor.repository.js";
 import InstructorRepository from "../../repository/instructor/instructor.repository.js";
 import { Swimming } from "../../utils/swimming-enum.utils.js";
 import InstructorServiceInterface from "./IInstructor.service.js";
+import { createCustomLogger } from "../../etc/logger.etc.js";
+
+// Initialize the logger
+const logger = createCustomLogger({
+  moduleFilename: path.parse(new URL(import.meta.url).pathname).name,
+  logToFile: true,
+  logLevel: process.env.INFO_LOG || "info",
+  logRotation: true,
+});
 
 /**
  * Service for managing instructors.
@@ -25,6 +35,7 @@ export default class InstructorService implements InstructorServiceInterface {
    * @throws {BadRequest} If the data is invalid.
    */
   async createInstructor(instructorData: NewInstructor): Promise<Instructor> {
+    logger.info("Validating instructor data...");
     this.validateInstructorData(instructorData);
 
     const instructor: Instructor = new Instructor(
@@ -34,7 +45,19 @@ export default class InstructorService implements InstructorServiceInterface {
       instructorData.availabilities
     );
 
-    return this.instructorRepository.create(instructor);
+    try {
+      logger.info("Creating a new instructor...");
+      const createdInstructor = await this.instructorRepository.create(
+        instructor
+      );
+      logger.info(
+        `Instructor created successfully with ID: ${createdInstructor.instructorId}`
+      );
+      return createdInstructor;
+    } catch (error) {
+      logger.error("Error occurred while creating instructor:", error);
+      throw error;
+    }
   }
 
   /**
@@ -42,7 +65,15 @@ export default class InstructorService implements InstructorServiceInterface {
    * @returns A promise that resolves to a list of all instructors.
    */
   async getAllInstructors(): Promise<Instructor[]> {
-    return this.instructorRepository.findAll();
+    try {
+      logger.info("Fetching all instructors...");
+      const instructors = await this.instructorRepository.findAll();
+      logger.info(`Found ${instructors.length} instructors.`);
+      return instructors;
+    } catch (error) {
+      logger.error("Error occurred while fetching all instructors:", error);
+      throw error;
+    }
   }
 
   /**
@@ -54,8 +85,10 @@ export default class InstructorService implements InstructorServiceInterface {
   async getInstructorsBySpecialties(
     specialties: Swimming[]
   ): Promise<Instructor[]> {
+    logger.info("Validating specialties...");
     for (const specialty of specialties) {
       if (!Object.values(Swimming).includes(specialty)) {
+        logger.warn(`Invalid specialty detected: ${specialty}`);
         throw new createHttpError.BadRequest(
           `Invalid specialty: ${specialty}. Must be one of: ${Object.values(
             Swimming
@@ -64,7 +97,22 @@ export default class InstructorService implements InstructorServiceInterface {
       }
     }
 
-    return this.instructorRepository.findBySpecialties(specialties);
+    try {
+      logger.info("Fetching instructors by specialties...");
+      const instructors = await this.instructorRepository.findBySpecialties(
+        specialties
+      );
+      logger.info(
+        `Found ${instructors.length} instructors matching specialties.`
+      );
+      return instructors;
+    } catch (error) {
+      logger.error(
+        "Error occurred while fetching instructors by specialties:",
+        error
+      );
+      throw error;
+    }
   }
 
   /**
@@ -80,7 +128,9 @@ export default class InstructorService implements InstructorServiceInterface {
     startTime: Date,
     endTime: Date
   ): Promise<Instructor[]> {
+    logger.info("Validating availability parameters...");
     if (isNaN(day) || day < 0 || day > 6) {
+      logger.warn(`Invalid day: ${day}`);
       throw new createHttpError.BadRequest(
         "Invalid day. Must be between 0 (Sunday) and 6 (Saturday)."
       );
@@ -88,22 +138,36 @@ export default class InstructorService implements InstructorServiceInterface {
 
     // Validate the time range
     if (!(startTime instanceof Date) || !(endTime instanceof Date)) {
+      logger.warn("Invalid time range provided.");
       throw new createHttpError.BadRequest(
         "Invalid startTime or endTime. They must be valid Date objects."
       );
     }
 
     if (startTime >= endTime) {
+      logger.warn("startTime is greater than or equal to endTime.");
       throw new createHttpError.BadRequest(
         "Invalid time range. startTime must be earlier than endTime."
       );
     }
 
-    return this.instructorRepository.findAvailableInstructors(
-      day,
-      startTime,
-      endTime
-    );
+    try {
+      logger.info("Fetching instructors by availability...");
+      const instructors =
+        await this.instructorRepository.findAvailableInstructors(
+          day,
+          startTime,
+          endTime
+        );
+      logger.info(`Found ${instructors.length} available instructors.`);
+      return instructors;
+    } catch (error) {
+      logger.error(
+        "Error occurred while fetching instructors by availability:",
+        error
+      );
+      throw error;
+    }
   }
 
   /**
@@ -113,14 +177,17 @@ export default class InstructorService implements InstructorServiceInterface {
    * @throws {NotFound} If no instructor is found.
    */
   async getInstructorById(instructorId: string): Promise<Instructor> {
+    logger.info(`Fetching instructor by ID: ${instructorId}...`);
     const instructor = await this.instructorRepository.findById(instructorId);
 
     if (!instructor) {
+      logger.warn(`Instructor with ID ${instructorId} not found.`);
       throw new createHttpError.NotFound(
         `Instructor with ID ${instructorId} not found`
       );
     }
 
+    logger.info(`Instructor with ID ${instructorId} retrieved successfully.`);
     return instructor;
   }
 
@@ -136,6 +203,9 @@ export default class InstructorService implements InstructorServiceInterface {
     instructorId: string,
     instructorData: Instructor
   ): Promise<Instructor | null> {
+    logger.info(
+      `Validating and updating instructor with ID: ${instructorId}...`
+    );
     const instructor = await this.getInstructorById(instructorId);
 
     this.validateInstructorData(instructorData);
@@ -146,7 +216,18 @@ export default class InstructorService implements InstructorServiceInterface {
       specialties: [...instructorData.specialties],
       availabilities: [...instructorData.availabilities],
     };
-    return this.instructorRepository.update(instructorId, updatedInstructor);
+
+    try {
+      const result = await this.instructorRepository.update(
+        instructorId,
+        updatedInstructor
+      );
+      logger.info(`Instructor with ID ${instructorId} updated successfully.`);
+      return result;
+    } catch (error) {
+      logger.error("Error occurred while updating instructor:", error);
+      throw error;
+    }
   }
 
   /**
@@ -155,7 +236,15 @@ export default class InstructorService implements InstructorServiceInterface {
    * @returns A promise that resolves to a boolean indicating success.
    */
   async deleteInstructor(instructorId: string): Promise<boolean> {
-    return this.instructorRepository.delete(instructorId);
+    logger.info(`Deleting instructor with ID: ${instructorId}...`);
+    try {
+      const result = await this.instructorRepository.delete(instructorId);
+      logger.info(`Instructor with ID ${instructorId} deleted successfully.`);
+      return result;
+    } catch (error) {
+      logger.error("Error occurred while deleting instructor:", error);
+      throw error;
+    }
   }
 
   /**
@@ -163,7 +252,15 @@ export default class InstructorService implements InstructorServiceInterface {
    * @returns A promise that resolves to a boolean indicating success.
    */
   async deleteAllInstructors(): Promise<boolean> {
-    return this.instructorRepository.deleteAll();
+    logger.info("Deleting all instructors...");
+    try {
+      const result = await this.instructorRepository.deleteAll();
+      logger.info("All instructors deleted successfully.");
+      return result;
+    } catch (error) {
+      logger.error("Error occurred while deleting all instructors:", error);
+      throw error;
+    }
   }
 
   /**
@@ -175,22 +272,26 @@ export default class InstructorService implements InstructorServiceInterface {
   private validateInstructorData(
     instructorData: Instructor | NewInstructor
   ): void {
+    logger.info("Validating instructor data...");
     if (
       instructorData.availabilities.length === 0 ||
       instructorData.availabilities.length > 7
     ) {
+      logger.warn("Invalid availabilities length.");
       throw new createHttpError.BadRequest(
         "The availabilities for the new instructor must be between 1 and 7 entries."
       );
     }
 
     if (instructorData.specialties.length === 0) {
+      logger.warn("No specialties provided for the instructor.");
       throw new createHttpError.BadRequest(
         "The instructor must have at least one specialty."
       );
     }
 
     if (instructorData.name.trim().length === 0) {
+      logger.warn("Instructor name is empty.");
       throw new createHttpError.BadRequest("Instructor name cannot be empty.");
     }
 

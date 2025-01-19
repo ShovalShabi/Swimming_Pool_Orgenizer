@@ -1,7 +1,16 @@
+import path from "path";
 import Lesson from "../../dto/lesson/lesson.dto.js";
-import NewLesson from "../../dto/lesson/new-lesson.dto.js";
 import LessonModel, { ILesson } from "../../model/lesson.model.js";
 import LessonRepositoryInterface from "./ILesson.repository.js";
+import { createCustomLogger } from "../../etc/logger.etc.js";
+
+// Initialize logger
+const logger = createCustomLogger({
+  moduleFilename: path.parse(new URL(import.meta.url).pathname).name,
+  logToFile: true,
+  logLevel: process.env.INFO_LOG || "info",
+  logRotation: true,
+});
 
 /**
  * Repository for managing lesson data.
@@ -14,9 +23,16 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns A promise that resolves to the created lesson as a DTO.
    */
   async createLesson(lessonData: Lesson): Promise<Lesson> {
-    const lessonModel = new LessonModel(Lesson.toModel(lessonData));
-    const savedLesson: ILesson = await lessonModel.save();
-    return Lesson.fromModel(savedLesson);
+    logger.info("Creating a new lesson in the database.");
+    try {
+      const lessonModel = new LessonModel(Lesson.toModel(lessonData));
+      const savedLesson: ILesson = await lessonModel.save();
+      logger.info(`Lesson created successfully with ID: ${savedLesson._id}`);
+      return Lesson.fromModel(savedLesson);
+    } catch (error: any) {
+      logger.error(`Failed to create lesson: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -25,8 +41,21 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns A promise that resolves to the lesson as a DTO if found, otherwise `null`.
    */
   async getLessonById(lessonId: string): Promise<Lesson | null> {
-    const lessonDoc = await LessonModel.findOne({ _id: lessonId }).exec();
-    return lessonDoc ? Lesson.fromModel(lessonDoc) : null;
+    logger.info(`Fetching lesson with ID: ${lessonId}`);
+    try {
+      const lessonDoc = await LessonModel.findOne({ _id: lessonId }).exec();
+      if (lessonDoc) {
+        logger.info(`Lesson with ID ${lessonId} retrieved successfully.`);
+        return Lesson.fromModel(lessonDoc);
+      }
+      logger.warn(`Lesson with ID ${lessonId} not found.`);
+      return null;
+    } catch (error: any) {
+      logger.error(
+        `Failed to fetch lesson with ID ${lessonId}: ${error.message}`
+      );
+      throw error;
+    }
   }
 
   /**
@@ -36,10 +65,19 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns A promise that resolves to an array of lessons as DTOs.
    */
   async getAllLessonsWithinRange(start: Date, end: Date): Promise<Lesson[]> {
-    const lessonDocs = await LessonModel.find({
-      "startAndEndTime.startTime": { $gte: start, $lte: end },
-    }).exec();
-    return lessonDocs.map(Lesson.fromModel);
+    logger.info(`Fetching lessons within the range: ${start} to ${end}`);
+    try {
+      const lessonDocs = await LessonModel.find({
+        "startAndEndTime.startTime": { $gte: start, $lte: end },
+      }).exec();
+      logger.info(
+        `Retrieved ${lessonDocs.length} lessons within the specified range.`
+      );
+      return lessonDocs.map(Lesson.fromModel);
+    } catch (error: any) {
+      logger.error(`Failed to fetch lessons within range: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -48,8 +86,19 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns A promise that resolves to an array of lessons as DTOs.
    */
   async getInstructorLessons(instructorId: string): Promise<Lesson[]> {
-    const lessonDocs = await LessonModel.find({ instructorId }).exec();
-    return lessonDocs.map((doc) => Lesson.fromModel(doc));
+    logger.info(`Fetching lessons for instructor with ID: ${instructorId}`);
+    try {
+      const lessonDocs = await LessonModel.find({ instructorId }).exec();
+      logger.info(
+        `Retrieved ${lessonDocs.length} lessons for instructor with ID: ${instructorId}`
+      );
+      return lessonDocs.map((doc) => Lesson.fromModel(doc));
+    } catch (error: any) {
+      logger.error(
+        `Failed to fetch lessons for instructor with ID ${instructorId}: ${error.message}`
+      );
+      throw error;
+    }
   }
 
   /**
@@ -62,12 +111,25 @@ export default class LessonRepository implements LessonRepositoryInterface {
     lessonId: string,
     lessonData: Lesson
   ): Promise<Lesson | null> {
-    const updatedLesson = await LessonModel.findOneAndUpdate(
-      { _id: lessonId },
-      Lesson.toModel(lessonData),
-      { new: true } // Ensures the updated document is returned
-    ).exec();
-    return updatedLesson ? Lesson.fromModel(updatedLesson) : null;
+    logger.info(`Updating lesson with ID: ${lessonId}`);
+    try {
+      const updatedLesson = await LessonModel.findOneAndUpdate(
+        { _id: lessonId },
+        Lesson.toModel(lessonData),
+        { new: true } // Ensures the updated document is returned
+      ).exec();
+      if (updatedLesson) {
+        logger.info(`Lesson with ID ${lessonId} updated successfully.`);
+        return Lesson.fromModel(updatedLesson);
+      }
+      logger.warn(`Lesson with ID ${lessonId} not found for update.`);
+      return null;
+    } catch (error: any) {
+      logger.error(
+        `Failed to update lesson with ID ${lessonId}: ${error.message}`
+      );
+      throw error;
+    }
   }
 
   /**
@@ -76,8 +138,19 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns A promise that resolves to `true` if the lesson was successfully deleted, otherwise `false`.
    */
   async deleteLesson(lessonId: string): Promise<boolean> {
-    const result = await LessonModel.findOneAndDelete({ _id: lessonId }).exec();
-    return result !== null;
+    logger.info(`Deleting lesson with ID: ${lessonId}`);
+    try {
+      const result = await LessonModel.findOneAndDelete({
+        _id: lessonId,
+      }).exec();
+      logger.info(`Lesson with ID ${lessonId} deleted successfully.`);
+      return result !== null;
+    } catch (error: any) {
+      logger.error(
+        `Failed to delete lesson with ID ${lessonId}: ${error.message}`
+      );
+      throw error;
+    }
   }
 
   /**
@@ -85,7 +158,14 @@ export default class LessonRepository implements LessonRepositoryInterface {
    * @returns A promise that resolves to `true` if at least one lesson was deleted, otherwise `false`.
    */
   async deleteAllLessons(): Promise<boolean> {
-    const result = await LessonModel.deleteMany({}).exec();
-    return result.deletedCount > 0;
+    logger.info("Deleting all lessons from the database.");
+    try {
+      const result = await LessonModel.deleteMany({}).exec();
+      logger.info("All lessons deleted successfully.");
+      return result.deletedCount > 0;
+    } catch (error: any) {
+      logger.error(`Failed to delete all lessons: ${error.message}`);
+      throw error;
+    }
   }
 }

@@ -1,7 +1,17 @@
+import path from "path";
 import InstructorRepositoryInterface from "./IInstructor.repository.js";
 import InstructorModel, { IInstructor } from "../../model/instructor.model.js";
 import Instructor from "../../dto/instructor/instructor.dto.js";
 import { Swimming } from "../../utils/swimming-enum.utils.js";
+import { createCustomLogger } from "../../etc/logger.etc.js";
+
+// Initialize logger
+const logger = createCustomLogger({
+  moduleFilename: path.parse(new URL(import.meta.url).pathname).name,
+  logToFile: true,
+  logLevel: process.env.INFO_LOG || "info",
+  logRotation: true,
+});
 
 /**
  * Repository for managing instructor data.
@@ -16,11 +26,20 @@ export default class InstructorRepository
    * @returns A promise that resolves to the newly created instructor.
    */
   async create(instructorData: Instructor): Promise<Instructor> {
-    const newInstructor = new InstructorModel(
-      Instructor.toModel(instructorData)
-    );
-    const savedInstructor = await newInstructor.save();
-    return Instructor.fromModel(savedInstructor);
+    logger.info("Creating a new instructor...");
+    try {
+      const newInstructor = new InstructorModel(
+        Instructor.toModel(instructorData)
+      );
+      const savedInstructor = await newInstructor.save();
+      logger.info(
+        `Instructor created successfully with ID: ${savedInstructor._id}`
+      );
+      return Instructor.fromModel(savedInstructor);
+    } catch (error) {
+      logger.error("Error creating instructor:", error);
+      throw error;
+    }
   }
 
   /**
@@ -28,8 +47,15 @@ export default class InstructorRepository
    * @returns A promise that resolves to an array of all instructors.
    */
   async findAll(): Promise<Instructor[]> {
-    const instructorDocs = await InstructorModel.find();
-    return instructorDocs.map((doc) => Instructor.fromModel(doc));
+    logger.info("Fetching all instructors...");
+    try {
+      const instructorDocs = await InstructorModel.find();
+      logger.info(`Retrieved ${instructorDocs.length} instructors.`);
+      return instructorDocs.map((doc) => Instructor.fromModel(doc));
+    } catch (error) {
+      logger.error("Error fetching all instructors:", error);
+      throw error;
+    }
   }
 
   /**
@@ -38,8 +64,23 @@ export default class InstructorRepository
    * @returns A promise that resolves to the instructor, or `null` if not found.
    */
   async findById(instructorId: string): Promise<Instructor | null> {
-    const instructorDoc = await InstructorModel.findOne({ _id: instructorId });
-    return instructorDoc ? Instructor.fromModel(instructorDoc) : null;
+    logger.info(`Fetching instructor with ID: ${instructorId}...`);
+    try {
+      const instructorDoc = await InstructorModel.findOne({
+        _id: instructorId,
+      });
+      if (instructorDoc) {
+        logger.info(
+          `Instructor with ID ${instructorId} retrieved successfully.`
+        );
+        return Instructor.fromModel(instructorDoc);
+      }
+      logger.warn(`Instructor with ID ${instructorId} not found.`);
+      return null;
+    } catch (error) {
+      logger.error(`Error fetching instructor with ID ${instructorId}:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -48,10 +89,21 @@ export default class InstructorRepository
    * @returns A promise that resolves to an array of instructors with the specified specialties.
    */
   async findBySpecialties(specialties: Swimming[]): Promise<Instructor[]> {
-    const instructorDocs = await InstructorModel.find({
-      specialties: { $all: specialties },
-    });
-    return instructorDocs.map((doc) => Instructor.fromModel(doc));
+    logger.info(
+      `Fetching instructors by specialties: ${specialties.join(", ")}...`
+    );
+    try {
+      const instructorDocs = await InstructorModel.find({
+        specialties: { $all: specialties },
+      });
+      logger.info(
+        `Retrieved ${instructorDocs.length} instructors matching specialties.`
+      );
+      return instructorDocs.map((doc) => Instructor.fromModel(doc));
+    } catch (error) {
+      logger.error("Error fetching instructors by specialties:", error);
+      throw error;
+    }
   }
 
   /**
@@ -66,63 +118,76 @@ export default class InstructorRepository
     startTime: Date,
     endTime: Date
   ): Promise<Instructor[]> {
-    const requestedStartTime = {
-      hours: startTime.getHours(),
-      minutes: startTime.getMinutes(),
-      seconds: startTime.getSeconds(),
-    };
-
-    const requestedEndTime = {
-      hours: endTime.getHours(),
-      minutes: endTime.getMinutes(),
-      seconds: endTime.getSeconds(),
-    };
-
-    const instructorDocs = (
-      await InstructorModel.find({
-        [`availabilities.${day}`]: {
-          $not: { $eq: -1 }, // Ensure the day is not -1 (instructor is available)
-        },
-      })
-    ).filter((doc: IInstructor) => {
-      const availability = (doc as any).availabilities[day]; // Use `as any` if `availabilities` isn't explicitly typed in your model
-
-      if (!availability || availability === -1) {
-        return false; // Skip unavailable instructors
-      }
-
-      const startTimeComponents = {
-        hours: new Date(availability.startTime).getHours(),
-        minutes: new Date(availability.startTime).getMinutes(),
-        seconds: new Date(availability.startTime).getSeconds(),
+    logger.info(
+      `Fetching instructors available on day ${day} from ${startTime} to ${endTime}...`
+    );
+    try {
+      const requestedStartTime = {
+        hours: startTime.getHours(),
+        minutes: startTime.getMinutes(),
+        seconds: startTime.getSeconds(),
       };
 
-      const endTimeComponents = {
-        hours: new Date(availability.endTime).getHours(),
-        minutes: new Date(availability.endTime).getMinutes(),
-        seconds: new Date(availability.endTime).getSeconds(),
+      const requestedEndTime = {
+        hours: endTime.getHours(),
+        minutes: endTime.getMinutes(),
+        seconds: endTime.getSeconds(),
       };
 
-      const startCondition =
-        startTimeComponents.hours < requestedStartTime.hours ||
-        (startTimeComponents.hours === requestedStartTime.hours &&
-          startTimeComponents.minutes < requestedStartTime.minutes) ||
-        (startTimeComponents.hours === requestedStartTime.hours &&
-          startTimeComponents.minutes === requestedStartTime.minutes &&
-          startTimeComponents.seconds <= requestedStartTime.seconds);
+      const instructorDocs = (
+        await InstructorModel.find({
+          [`availabilities.${day}`]: {
+            $not: { $eq: -1 }, // Ensure the day is not -1 (instructor is available)
+          },
+        })
+      ).filter((doc: IInstructor) => {
+        const availability = (doc as any).availabilities[day]; // Use `as any` if `availabilities` isn't explicitly typed in your model
 
-      const endCondition =
-        endTimeComponents.hours > requestedEndTime.hours ||
-        (endTimeComponents.hours === requestedEndTime.hours &&
-          endTimeComponents.minutes > requestedEndTime.minutes) ||
-        (endTimeComponents.hours === requestedEndTime.hours &&
-          endTimeComponents.minutes === requestedEndTime.minutes &&
-          endTimeComponents.seconds >= requestedEndTime.seconds);
+        if (!availability || availability === -1) {
+          return false; // Skip unavailable instructors
+        }
 
-      return startCondition && endCondition;
-    });
+        const startTimeComponents = {
+          hours: new Date(availability.startTime).getHours(),
+          minutes: new Date(availability.startTime).getMinutes(),
+          seconds: new Date(availability.startTime).getSeconds(),
+        };
 
-    return instructorDocs.map((doc: IInstructor) => Instructor.fromModel(doc));
+        const endTimeComponents = {
+          hours: new Date(availability.endTime).getHours(),
+          minutes: new Date(availability.endTime).getMinutes(),
+          seconds: new Date(availability.endTime).getSeconds(),
+        };
+
+        const startCondition =
+          startTimeComponents.hours < requestedStartTime.hours ||
+          (startTimeComponents.hours === requestedStartTime.hours &&
+            startTimeComponents.minutes < requestedStartTime.minutes) ||
+          (startTimeComponents.hours === requestedStartTime.hours &&
+            startTimeComponents.minutes === requestedStartTime.minutes &&
+            startTimeComponents.seconds <= requestedStartTime.seconds);
+
+        const endCondition =
+          endTimeComponents.hours > requestedEndTime.hours ||
+          (endTimeComponents.hours === requestedEndTime.hours &&
+            endTimeComponents.minutes > requestedEndTime.minutes) ||
+          (endTimeComponents.hours === requestedEndTime.hours &&
+            endTimeComponents.minutes === requestedEndTime.minutes &&
+            endTimeComponents.seconds >= requestedEndTime.seconds);
+
+        return startCondition && endCondition;
+      });
+
+      logger.info(
+        `Retrieved ${instructorDocs.length} instructors available on day ${day}.`
+      );
+      return instructorDocs.map((doc: IInstructor) =>
+        Instructor.fromModel(doc)
+      );
+    } catch (error) {
+      logger.error("Error fetching available instructors:", error);
+      throw error;
+    }
   }
 
   /**
@@ -135,13 +200,23 @@ export default class InstructorRepository
     instructorId: string,
     instructorData: Instructor
   ): Promise<Instructor | null> {
-    const updatedInstructor = await InstructorModel.findOneAndUpdate(
-      { _id: instructorId },
-      Instructor.toModel(instructorData),
-      { new: true }
-    );
-
-    return updatedInstructor ? Instructor.fromModel(updatedInstructor) : null;
+    logger.info(`Updating instructor with ID: ${instructorId}...`);
+    try {
+      const updatedInstructor = await InstructorModel.findOneAndUpdate(
+        { _id: instructorId },
+        Instructor.toModel(instructorData),
+        { new: true }
+      );
+      if (updatedInstructor) {
+        logger.info(`Instructor with ID ${instructorId} updated successfully.`);
+        return Instructor.fromModel(updatedInstructor);
+      }
+      logger.warn(`Instructor with ID ${instructorId} not found for update.`);
+      return null;
+    } catch (error) {
+      logger.error(`Error updating instructor with ID ${instructorId}:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -150,8 +225,15 @@ export default class InstructorRepository
    * @returns A promise that resolves to `true` if the instructor was successfully deleted.
    */
   async delete(instructorId: string): Promise<boolean> {
-    const result = await InstructorModel.deleteOne({ _id: instructorId });
-    return result.deletedCount > 0;
+    logger.info(`Deleting instructor with ID: ${instructorId}...`);
+    try {
+      const result = await InstructorModel.deleteOne({ _id: instructorId });
+      logger.info(`Instructor with ID ${instructorId} deleted successfully.`);
+      return result.deletedCount > 0;
+    } catch (error) {
+      logger.error(`Error deleting instructor with ID ${instructorId}:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -159,7 +241,14 @@ export default class InstructorRepository
    * @returns A promise that resolves to `true` if all instructors were successfully deleted.
    */
   async deleteAll(): Promise<boolean> {
-    const result = await InstructorModel.deleteMany({});
-    return result.deletedCount > 0;
+    logger.info("Deleting all instructors...");
+    try {
+      const result = await InstructorModel.deleteMany({});
+      logger.info("All instructors deleted successfully.");
+      return result.deletedCount > 0;
+    } catch (error) {
+      logger.error("Error deleting all instructors:", error);
+      throw error;
+    }
   }
 }

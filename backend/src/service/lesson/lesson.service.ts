@@ -1,3 +1,4 @@
+import path from "path";
 import createHttpError from "http-errors";
 import Lesson from "../../dto/lesson/lesson.dto.js";
 import NewLesson from "../../dto/lesson/new-lesson.dto.js";
@@ -12,6 +13,15 @@ import StartAndEndTime from "../../dto/instructor/start-and-end-time.dto.js";
 import { DaysOfWeek } from "../../utils/days-week-enum.utils.js";
 import LessonServiceInterface from "./ILesson.service.js";
 import compareTime from "../../utils/compare-hours.utils.js";
+import { createCustomLogger } from "../../etc/logger.etc.js";
+
+// Initialize logger
+const logger = createCustomLogger({
+  moduleFilename: path.parse(new URL(import.meta.url).pathname).name,
+  logToFile: true,
+  logLevel: process.env.INFO_LOG || "info",
+  logRotation: true,
+});
 
 /**
  * Service for managing lessons.
@@ -38,14 +48,18 @@ export default class LessonService implements LessonServiceInterface {
     lessonData: NewLesson,
     dayOfTheWeek: number
   ): Promise<Lesson> {
+    logger.info("Starting to create a new lesson.");
     // Ensure dayOfTheWeek is a valid day
-    if (isNaN(dayOfTheWeek) || dayOfTheWeek < 0 || dayOfTheWeek > 6)
+    if (isNaN(dayOfTheWeek) || dayOfTheWeek < 0 || dayOfTheWeek > 6) {
+      logger.error("Invalid day of the week provided.");
       throw new createHttpError.BadRequest(
         "Invalid day of the week. Must be between 0 and 6."
       );
+    }
 
     this.validateLessonData(lessonData);
 
+    logger.info("Fetching instructor data for the lesson.");
     const instructorData: Instructor =
       await this.instructorService.getInstructorById(lessonData.instructorId); // must be valid otherwise it will throw an exception
 
@@ -54,6 +68,9 @@ export default class LessonService implements LessonServiceInterface {
         instructorData.specialties.includes(specialty)
       )
     ) {
+      logger.error(
+        `Instructor does not teach all required specialties: ${lessonData.specialties}`
+      );
       throw new createHttpError.BadRequest(
         "The instructor is not teaching the entire swimming styles of this lesson"
       );
@@ -62,13 +79,17 @@ export default class LessonService implements LessonServiceInterface {
     if (
       instructorData.availabilities[dayOfTheWeek] instanceof StartAndEndTime
     ) {
+      logger.info("Validating instructor availability for the lesson.");
       const instStartTime =
         instructorData.availabilities[dayOfTheWeek].startTime;
       const instEndTime = instructorData.availabilities[dayOfTheWeek].endTime;
       if (
         compareTime(lessonData.startAndEndTime.startTime, instStartTime) < 0 || // Start time is earlier than available
         compareTime(lessonData.startAndEndTime.endTime, instEndTime) > 0 // End time is later than available
-      )
+      ) {
+        logger.error(
+          `Instructor is unavailable for the requested time slot: ${lessonData.startAndEndTime}`
+        );
         // if the instructor is not teaching in those time slots
         throw new createHttpError.BadRequest(
           `The Instructor ${
@@ -77,7 +98,9 @@ export default class LessonService implements LessonServiceInterface {
             Object.values(DaysOfWeek)[dayOfTheWeek]
           }`
         );
+      }
 
+      logger.info("Checking for overlapping lessons.");
       const exisitngLessons = await this.getLessonsOfInstrucorByDay(
         instructorData.instructorId!,
         lessonData.startAndEndTime.endTime
@@ -92,11 +115,19 @@ export default class LessonService implements LessonServiceInterface {
         lessonData.students
       );
 
-      return this.lessonRepository.createLesson(lesson);
+      logger.info("Creating lesson in the database.");
+      const createdLesson = await this.lessonRepository.createLesson(lesson);
+      logger.info(
+        `Lesson created successfully with ID: ${createdLesson.lessonId}`
+      );
+      return createdLesson;
     }
 
+    logger.error(
+      `Instructor ${instructorData.name} is not available on the requested day.`
+    );
     throw new createHttpError.BadRequest(
-      `The Instrucor ${instructorData.name} is not teaching on ${
+      `The Instructor ${instructorData.name} is not teaching on ${
         Object.values(DaysOfWeek)[dayOfTheWeek]
       }`
     );
@@ -109,12 +140,16 @@ export default class LessonService implements LessonServiceInterface {
    * @throws {NotFound} If no lesson is found with the given ID.
    */
   async getLessonById(lessonId: string): Promise<Lesson> {
+    logger.info(`Fetching lesson with ID: ${lessonId}`);
     const lesson = await this.lessonRepository.getLessonById(lessonId);
 
-    if (!lesson)
+    if (!lesson) {
+      logger.error(`Lesson with ID ${lessonId} not found.`);
       throw new createHttpError.NotFound(
         `Lesson with ID ${lessonId} not found`
       );
+    }
+    logger.info(`Lesson with ID ${lessonId} retrieved successfully.`);
     return lesson;
   }
 
@@ -126,13 +161,22 @@ export default class LessonService implements LessonServiceInterface {
    * @throws {BadRequest} If the date range is invalid.
    */
   async getAllLessonsWithinRange(start: Date, end: Date): Promise<Lesson[]> {
+    logger.info(`Fetching lessons within range: ${start} to ${end}`);
     // Validate dates
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      logger.error("Invalid date range provided.");
       throw new createHttpError.BadRequest(
         "Invalid date format. Provide valid start and end dates."
       );
     }
-    return this.lessonRepository.getAllLessonsWithinRange(start, end);
+    const lessons = await this.lessonRepository.getAllLessonsWithinRange(
+      start,
+      end
+    );
+    logger.info(
+      `Retrieved ${lessons.length} lessons within the specified range.`
+    );
+    return lessons;
   }
 
   /**
@@ -145,6 +189,9 @@ export default class LessonService implements LessonServiceInterface {
     instructorId: string,
     day: Date
   ): Promise<Lesson[]> {
+    logger.info(
+      `Fetching lessons for instructor ${instructorId} on day: ${day}`
+    );
     // Retrieve all lessons for the instructor
     const allLessons: Lesson[] =
       await this.lessonRepository.getInstructorLessons(instructorId);
@@ -158,6 +205,9 @@ export default class LessonService implements LessonServiceInterface {
       return lessonDay === targetDay;
     });
 
+    logger.info(
+      `Retrieved ${filteredLessons.length} lessons for instructor ${instructorId} on day: ${day}.`
+    );
     return filteredLessons;
   }
 
@@ -175,11 +225,13 @@ export default class LessonService implements LessonServiceInterface {
     const lesson = await this.getLessonById(lessonId);
 
     if (!lesson) {
+      logger.error(`Lesson with ID : ${lessonId} is not found`);
       throw new createHttpError.NotFound(
         `Lesson with ID ${lessonId} not found`
       );
     }
 
+    logger.info("Validating instructor availability for updated lesson.");
     this.validateLessonData(lessonData);
 
     const instructorData: Instructor =
@@ -190,6 +242,7 @@ export default class LessonService implements LessonServiceInterface {
         instructorData.specialties.includes(specialty)
       )
     ) {
+      logger.error("Instructor does not match required specialties.");
       throw new createHttpError.BadRequest(
         "The instructor is not teaching the entire swimming styles of this lesson"
       );
@@ -231,6 +284,9 @@ export default class LessonService implements LessonServiceInterface {
         students: [...lessonData.students],
       };
 
+      logger.info(
+        `The lesson with ID ${lessonId} has been updated successfully!`
+      );
       return this.lessonRepository.updateLesson(lessonId, updatedLesson);
     }
 
@@ -247,7 +303,10 @@ export default class LessonService implements LessonServiceInterface {
    * @returns A promise that resolves to `true` if the lesson was deleted successfully.
    */
   async deleteLesson(lessonId: string): Promise<boolean> {
-    return this.lessonRepository.deleteLesson(lessonId);
+    logger.info(`Deleting lesson with ID: ${lessonId}`);
+    const result = await this.lessonRepository.deleteLesson(lessonId);
+    logger.info(`Lesson with ID ${lessonId} deleted successfully.`);
+    return result;
   }
 
   /**
@@ -256,7 +315,10 @@ export default class LessonService implements LessonServiceInterface {
    * @returns A promise that resolves to `true` if the lesson was deleted successfully.
    */
   async deleteAllLessons(): Promise<boolean> {
-    return this.lessonRepository.deleteAllLessons();
+    logger.info(`Deleting all lessons`);
+    const result = await this.lessonRepository.deleteAllLessons();
+    logger.info(`All lessons has been deleted successfully.`);
+    return result;
   }
 
   /**
