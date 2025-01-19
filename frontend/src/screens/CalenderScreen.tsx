@@ -5,8 +5,9 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
+  TextInput,
 } from "react-native";
-import { Text, Button } from "react-native-paper";
+import { Text, Button, RadioButton } from "react-native-paper";
 import CustomModal from "../components/Modal";
 import CalendarCell from "../components/CalendarCell";
 import { DaysOfWeek } from "../utils/days-week-enum.utils";
@@ -14,6 +15,12 @@ import LessonService from "../services/lesson.service";
 import Lesson from "../dto/lesson/lesson.dto";
 import InstructorService from "../services/instructor.service";
 import Instructor from "../dto/instructor/instructor.dto";
+import { Swimming } from "../utils/swimming-enum.utils";
+import { LessonType } from "../utils/lesson-enum.utils";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import StartAndEndTime from "../dto/instructor/start-and-end-time.dto";
+import Student from "../dto/student/student.dto";
+import HorizontalDivider from "../components/HorizontalDivider";
 
 const { width, height } = Dimensions.get("window");
 
@@ -43,7 +50,32 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [availableInstructors, setAvailableInstructors] = useState<
     Instructor[]
+  >([] as Instructor[]);
+  const [selectedInstructor, setSelectedInstructor] =
+    useState<Instructor | null>(null);
+  const [studentName, setStudentName] = useState("");
+  const [specialties, setSpecialties] = useState<Swimming[]>([] as Swimming[]);
+  const [lessonsWithinCell, setLessonsWithinCell] = useState<Lesson[]>(
+    [] as Lesson[]
+  );
+  const [addNewLessonSection, setAddNewLessonSection] = useState(false);
+  const [lessonType, setLessonType] = useState<LessonType>(LessonType.PUBLIC);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [startHourAndDate, setStartHourAndDate] = useState<Date | null>(null);
+  const [endHourAndDate, setEndHourAndDate] = useState<Date | null>(null);
+  const [startAndEndTime, setStartAndEndTime] =
+    useState<StartAndEndTime | null>(null);
+  const [availableInstructorsInCell, setAvailableInstructorsInCell] = useState<
+    Instructor[]
   >([]);
+  const [studntsArr, setStudentsArr] = useState<Student[]>([]);
+  const [currentStudent, setCurentStudent] = useState<Student | null>(null);
+  const [studnetSpecialties, setStudnetSpecialties] = useState<Swimming[]>(
+    [] as Swimming[]
+  );
+
   const [errorMessage, setErrorMessage] = useState("");
 
   const weekDates = getWeekDates(currentWeekOffset);
@@ -80,9 +112,84 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  // cosnt fetchLessonsOfOneCell = async (startTime:Date, endTime:Date) =>{
+
+  //   try{
+  //     const lessons:Lesson[] = await LessonService.getLessonsWithinRange(startTime,endTime);
+  //     setLessonsWithinCell(lessons);
+  //   }catch(error){
+
+  //   }
+  // }
+
+  const handleChooseInstructor = (instructor: Instructor) => {
+    setAvailableInstructors(
+      availableInstructors.filter((i) => i !== instructor)
+    );
+    setSelectedInstructor(selectedInstructor);
+    setSpecialties(instructor.specialties);
+  };
+
+  const handleRemoveInstructor = (instructor: Instructor) => {
+    setAvailableInstructors([...availableInstructors, instructor]);
+    setSelectedInstructor(null);
+    setSpecialties([]);
+  };
+
+  const handleRemoveSpecialty = (specialty: Swimming) => {
+    setSpecialties(specialties.filter((s) => s !== specialty));
+    setSpecialties([...specialties, specialty]);
+  };
+
+  const handleAddSpecialty = (specialty: Swimming) => {
+    setSpecialties([...specialties, specialty]);
+    setSpecialties(specialties.filter((s) => s !== specialty));
+  };
+
+  const handleChooseLessonType = (value: string) => {
+    setLessonType(value as LessonType);
+  };
+
+  const handleAddStartAndEndTime = () => {
+    if (startHourAndDate && endHourAndDate) {
+      const startEndObj: StartAndEndTime = new StartAndEndTime(
+        startHourAndDate,
+        endHourAndDate
+      );
+      setStartAndEndTime(startEndObj);
+      setStartHourAndDate(null);
+      setEndHourAndDate(null);
+    }
+  };
+
+  const handleRemoveStartAndEndTime = () => {
+    setStartAndEndTime(null);
+  };
+
+  const handleAddStudent = () => {
+    if (studentName && studnetSpecialties && lessonType) {
+      const student: Student = new Student(
+        studentName,
+        studnetSpecialties,
+        lessonType
+      );
+
+      setStudentsArr([...studntsArr, student]);
+    }
+  };
+
+  const handleRemoveStudent = (indexToRemove: number) => {
+    const newArray = studntsArr.filter((_, index) => index !== indexToRemove);
+    setStudentsArr(newArray);
+  };
+
   useEffect(() => {
     fetchLessons();
   }, [currentWeekOffset]);
+
+  const toggleAddLessonSection = () => {
+    setAddNewLessonSection(addNewLessonSection ? false : true);
+  };
 
   const handleCellPress = async (day: string, hour: string, date: Date) => {
     const cellLessons = lessons.filter((lesson) => {
@@ -184,23 +291,171 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         }`}
         onClose={() => setModalVisible(false)}
       >
-        {errorMessage ? (
+        {!availableInstructors.length ? (
           <Text>{errorMessage}</Text>
-        ) : selectedCell?.lessons.length ? (
-          selectedCell.lessons.map((lesson) => (
-            <Button
-              key={lesson.lessonId}
-              onPress={() => {
-                setModalVisible(false);
-                setLessonModalVisible(true);
-              }}
-            >
-              {lesson.typeLesson} -{" "}
-              {new Date(lesson.startAndEndTime.startTime).toLocaleTimeString()}
-            </Button>
-          ))
         ) : (
-          <Text>No lessons. Add a new one?</Text>
+          <ScrollView>
+            <View>
+              <Button
+                key={"OpenExisitnglessons Section"}
+                mode="contained"
+                onPress={() => {
+                  console.log("donothing");
+                }}
+                style={styles.specialtyBubble}
+              >
+                Edit Lessons
+              </Button>
+            </View>
+            <HorizontalDivider color="#888" thickness={2} marginVertical={15} />
+            <View>
+              <Text>Would You Like to add a New Lesson?</Text>
+              <Button
+                key={"OpenLessonSection"}
+                mode="contained"
+                onPress={toggleAddLessonSection}
+                style={styles.specialtyBubble}
+              >
+                + Add New Lesson
+              </Button>
+              {addNewLessonSection && (
+                <View>
+                  {selectedInstructor?.instructorId && (
+                    <Text style={styles.systemId}>
+                      System ID: {selectedInstructor.instructorId}
+                    </Text>
+                  )}
+                  <TextInput
+                    value={studentName}
+                    onChangeText={setStudentName}
+                    placeholder="Enter Student Name"
+                    placeholderTextColor="#555"
+                    style={styles.input}
+                  />
+                  <View>
+                    <Text>Choose instructor:</Text>
+                    <View style={styles.specialtiesContainer}>
+                      {availableInstructors.map((instructor) => (
+                        <Button
+                          key={instructor.instructorId}
+                          onPress={() => handleChooseInstructor(instructor)}
+                          style={styles.dayButton}
+                        >
+                          {instructor.name}
+                        </Button>
+                      ))}
+                    </View>
+                    <View style={styles.specialtiesContainer}>
+                      {selectedInstructor && (
+                        <Button
+                          key={selectedInstructor.instructorId}
+                          mode="contained"
+                          onPress={() =>
+                            handleRemoveInstructor(selectedInstructor)
+                          }
+                          style={styles.specialtyBubble}
+                        >
+                          <Text style={styles.centeredText}>
+                            {selectedInstructor.name}{" "}
+                            <Text style={styles.xButton}>X</Text>
+                          </Text>
+                        </Button>
+                      )}
+                    </View>
+                  </View>
+                  <View>
+                    <Text>Specialties:</Text>
+                    <View style={styles.specialtiesContainer}>
+                      {specialties.map((specialty) => (
+                        <Button
+                          key={specialty}
+                          onPress={() => handleAddSpecialty(specialty)}
+                          style={styles.dayButton}
+                        >
+                          {specialty}
+                        </Button>
+                      ))}
+                    </View>
+                    <View style={styles.specialtiesContainer}>
+                      {specialties.map((specialty) => (
+                        <Button
+                          key={specialty}
+                          mode="contained"
+                          onPress={() => handleRemoveSpecialty(specialty)}
+                          style={styles.specialtyBubble}
+                        >
+                          <Text style={styles.centeredText}>
+                            {specialty} <Text style={styles.xButton}>X</Text>
+                          </Text>
+                        </Button>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.specialtiesContainer}>
+                    <Text style={styles.title}>Select Lesson Type:</Text>
+                    <RadioButton.Group
+                      onValueChange={handleChooseLessonType} // Pass the handler
+                      value={lessonType}
+                    >
+                      {Object.values(LessonType).map((type) => (
+                        <View key={type} style={styles.option}>
+                          <RadioButton value={type} />
+                          <Text>{type}</Text>
+                        </View>
+                      ))}
+                    </RadioButton.Group>
+                    <Text style={styles.selected}>
+                      Selected Lesson Type: {lessonType}
+                    </Text>
+                  </View>
+
+                  <View>
+                    <Text>Lesson Time Frame:</Text>
+                    <Button
+                      onPress={() => setShowStartPicker(!showStartPicker)}
+                      style={styles.toggleButton}
+                    >
+                      Select Start Time
+                    </Button>
+                    {showStartPicker && (
+                      <DateTimePicker
+                        value={startHourAndDate || new Date()}
+                        mode="time"
+                        is24Hour
+                        onChange={(event, date) => {
+                          if (date) setStartHourAndDate(date);
+                        }}
+                      />
+                    )}
+                    <Button
+                      onPress={() => setShowEndPicker(!showEndPicker)}
+                      style={styles.toggleButton}
+                    >
+                      Select End Time
+                    </Button>
+                    {showEndPicker && (
+                      <DateTimePicker
+                        value={endHourAndDate || new Date()}
+                        mode="time"
+                        is24Hour
+                        onChange={(event, date) => {
+                          if (date) setEndHourAndDate(date);
+                        }}
+                      />
+                    )}
+                    <Button
+                      onPress={handleAddStartAndEndTime}
+                      style={styles.addButton}
+                      disabled={!startHourAndDate || !endHourAndDate}
+                    >
+                      Add Time Frame
+                    </Button>
+                  </View>
+                </View>
+              )}
+            </View>
+          </ScrollView>
         )}
       </CustomModal>
 
@@ -275,6 +530,112 @@ const styles = StyleSheet.create({
     backgroundColor: "#e1bee7",
     paddingVertical: 5,
     width: "100%",
+  },
+  selectedDayContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  selectedDayText: {
+    marginRight: 10,
+    fontSize: 16,
+    color: "#333",
+  },
+  scrollContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  card: {
+    width: width * 0.4,
+    height: height * 0.2,
+    marginHorizontal: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 10,
+    color: "#333",
+  },
+  specialtyBubble: {
+    backgroundColor: "#7e57c2",
+    marginHorizontal: 5,
+    marginVertical: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  centeredText: {
+    textAlign: "center",
+    color: "white",
+  },
+  availabilityBubble: {
+    backgroundColor: "#d9f7be",
+    marginHorizontal: 5,
+    marginVertical: 5,
+    paddingHorizontal: 10,
+  },
+  xButton: {
+    marginLeft: 10,
+    color: "white",
+    fontWeight: "bold",
+  },
+  deleteButton: {
+    backgroundColor: "#ffcccc",
+    marginTop: 10,
+  },
+  updateButton: {
+    backgroundColor: "#ffd580",
+    marginTop: 10,
+  },
+  addButton: {
+    backgroundColor: "#d9f7be",
+    marginTop: 10,
+  },
+  modalScrollable: {
+    maxHeight: height * 0.8,
+  },
+  toggleButton: {
+    backgroundColor: "#cce5ff",
+    marginVertical: 5,
+  },
+  daysContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginVertical: 5,
+  },
+  specialtiesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginVertical: 5,
+  },
+  dayButton: {
+    marginHorizontal: 5,
+    marginVertical: 5,
+    backgroundColor: "#f0f0f0",
+  },
+  systemId: {
+    color: "#d3d3d3",
+  },
+  title: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 5,
+  },
+  label: {
+    fontSize: 16,
+    marginLeft: 5,
+  },
+  selected: {
+    marginTop: 20,
+    fontSize: 16,
+    fontStyle: "italic",
   },
 });
 
