@@ -72,7 +72,6 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     useState<StartAndEndTime | null>(null);
   const [modalAnchor, setModalAnchor] = useState(false);
   const [studentsArr, setStudentsArr] = useState<Student[]>([]);
-  const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
   const [studnetSpecialties, setStudnetSpecialties] = useState<Swimming[]>(
     [] as Swimming[]
   );
@@ -103,7 +102,6 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         startTime,
         endTime
       );
-      console.log(instructors);
       setAvailableInstructors(instructors);
       setErrorMessage(
         instructors.length ? "" : "No instructors available for this time."
@@ -112,17 +110,6 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setErrorMessage("Error fetching instructors.");
     }
   };
-
-  // cosnt fetchLessonsOfOneCell = async (startTime:Date, endTime:Date) =>{
-
-  //   try{
-  //     const lessons:Lesson[] = await LessonService.getLessonsWithinRange(startTime,endTime);
-  //     setLessonsWithinCell(lessons);
-  //   }catch(error){
-
-  //   }
-  // }
-
   const clearFields = () => {
     setModalVisible(false);
     setAvailableInstructors([]);
@@ -182,13 +169,13 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         endHourAndDate
       );
       setStartAndEndTime(startEndObj);
-      setStartHourAndDate(null);
-      setEndHourAndDate(null);
     }
   };
 
   const handleRemoveStartAndEndTime = () => {
     setStartAndEndTime(null);
+    setStartHourAndDate(null);
+    setEndHourAndDate(null);
   };
 
   const handleAddStudent = () => {
@@ -198,7 +185,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         [...studnetSpecialties],
         lessonType
       );
-      setStudentsArr((prevStudents) => [...prevStudents, student]);
+      setStudentsArr([...studentsArr, student]);
       setStudnetSpecialties([]);
       setStudentName("");
     }
@@ -243,15 +230,30 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       return;
     }
 
+    if (!studentsArr.length) {
+      console.log("students cannot be empty");
+      return;
+    }
+
+    const start = new Date(startHourAndDate);
+    start.setSeconds(0, 0);
+    const end = new Date(endHourAndDate);
+    end.setSeconds(0, 0);
+
     const newLesson: NewLesson = new NewLesson(
       lessonType,
       selectedInstructor.instructorId,
       specialties,
-      new StartAndEndTime(startHourAndDate, endHourAndDate),
+      new StartAndEndTime(start, end),
       studentsArr
     );
 
-    console.log(JSON.stringify(newLesson));
+    LessonService.createLesson(
+      newLesson,
+      newLesson.startAndEndTime.startTime.getDay()
+    );
+    clearFields();
+    setModalVisible(false);
   };
 
   const handleCellPress = async (day: string, hour: string, date: Date) => {
@@ -499,13 +501,18 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                           }}
                         />
                       )}
-                      <Button
-                        onPress={handleAddStartAndEndTime}
-                        style={styles.addButton}
-                        disabled={!startHourAndDate || !endHourAndDate}
-                      >
-                        Add Time Frame
-                      </Button>
+                      {startHourAndDate && endHourAndDate && (
+                        <Button
+                          onPress={handleRemoveStartAndEndTime}
+                          style={styles.specialtyBubble}
+                        >
+                          <Text style={styles.centeredText}>
+                            {new Date(startHourAndDate).toLocaleTimeString()} -{" "}
+                            {new Date(endHourAndDate).toLocaleTimeString()}{" "}
+                            <Text style={styles.xButton}>X</Text>
+                          </Text>
+                        </Button>
+                      )}
                     </View>
                     <View>
                       <TextInput
