@@ -13,6 +13,11 @@ import { DaysOfWeek } from "../../utils/days-week-enum.utils.js";
 import LessonServiceInterface from "./ILesson.service.js";
 import compareTime from "../../utils/compare-hours.utils.js";
 
+/**
+ * Service for managing lessons.
+ * Implements the `LessonServiceInterface` and provides methods for creating, retrieving, updating,
+ * and deleting lessons, as well as validating lesson data.
+ */
 export default class LessonService implements LessonServiceInterface {
   private lessonRepository: LessonRepositoryInterface;
   private instructorService: InstructorServiceInterface;
@@ -22,6 +27,13 @@ export default class LessonService implements LessonServiceInterface {
     this.instructorService = new InstructorService();
   }
 
+  /**
+   * Creates a new lesson.
+   * @param lessonData - The data for the new lesson.
+   * @param dayOfTheWeek - The day of the week for the lesson (0 for Sunday, 6 for Saturday).
+   * @returns A promise that resolves to the newly created lesson.
+   * @throws {BadRequest} If the data or instructor availability is invalid.
+   */
   async createLesson(
     lessonData: NewLesson,
     dayOfTheWeek: number
@@ -90,6 +102,12 @@ export default class LessonService implements LessonServiceInterface {
     );
   }
 
+  /**
+   * Retrieves a lesson by its ID.
+   * @param lessonId - The unique identifier of the lesson.
+   * @returns A promise that resolves to the lesson.
+   * @throws {NotFound} If no lesson is found with the given ID.
+   */
   async getLessonById(lessonId: string): Promise<Lesson> {
     const lesson = await this.lessonRepository.getLessonById(lessonId);
 
@@ -100,6 +118,13 @@ export default class LessonService implements LessonServiceInterface {
     return lesson;
   }
 
+  /**
+   * Retrieves all lessons within a specified date range.
+   * @param start - The start date of the range.
+   * @param end - The end date of the range.
+   * @returns A promise that resolves to an array of lessons.
+   * @throws {BadRequest} If the date range is invalid.
+   */
   async getAllLessonsWithinRange(start: Date, end: Date): Promise<Lesson[]> {
     // Validate dates
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
@@ -110,6 +135,12 @@ export default class LessonService implements LessonServiceInterface {
     return this.lessonRepository.getAllLessonsWithinRange(start, end);
   }
 
+  /**
+   * Retrieves all lessons for an instructor on a specific day.
+   * @param instructorId - The unique identifier of the instructor.
+   * @param day - The specific day to filter lessons.
+   * @returns A promise that resolves to an array of lessons.
+   */
   async getLessonsOfInstrucorByDay(
     instructorId: string,
     day: Date
@@ -130,6 +161,13 @@ export default class LessonService implements LessonServiceInterface {
     return filteredLessons;
   }
 
+  /**
+   * Updates a lesson by its ID.
+   * @param lessonId - The unique identifier of the lesson.
+   * @param lessonData - The updated lesson data.
+   * @returns A promise that resolves to the updated lesson or `null` if not found.
+   * @throws {NotFound} If no lesson is found with the given ID.
+   */
   async updateLesson(
     lessonId: string,
     lessonData: Lesson
@@ -203,14 +241,30 @@ export default class LessonService implements LessonServiceInterface {
     );
   }
 
+  /**
+   * Deletes a lesson by its ID.
+   * @param lessonId - The unique identifier of the lesson to delete.
+   * @returns A promise that resolves to `true` if the lesson was deleted successfully.
+   */
   async deleteLesson(lessonId: string): Promise<boolean> {
     return this.lessonRepository.deleteLesson(lessonId);
   }
 
+  /**
+   * Deletes a lesson by its ID.
+   * @param lessonId - The unique identifier of the lesson to delete.
+   * @returns A promise that resolves to `true` if the lesson was deleted successfully.
+   */
   async deleteAllLessons(): Promise<boolean> {
     return this.lessonRepository.deleteAllLessons();
   }
 
+  /**
+   * Validates lesson data.
+   * Ensures all properties of the lesson are valid, including lesson type, duration, and student details.
+   * @param lessonData - The lesson data to validate.
+   * @throws {BadRequest} If any validation rule is violated.
+   */
   validateLessonData = (lessonData: Lesson | NewLesson): void => {
     if (!Object.values(LessonType).includes(lessonData.typeLesson)) {
       throw new createHttpError.BadRequest(
@@ -298,6 +352,12 @@ export default class LessonService implements LessonServiceInterface {
     });
   };
 
+  /**
+   * Validates that the new lesson does not overlap with existing lessons.
+   * @param targetLesson - The new lesson being created.
+   * @param arrExistingLessons - Array of existing lessons to compare against.
+   * @throws {BadRequest} If overlapping lessons are found.
+   */
   validateOverlappingLessons = (
     targetLesson: Lesson | NewLesson,
     arrExistingLessons: Lesson[]

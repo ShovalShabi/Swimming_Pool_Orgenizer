@@ -1,9 +1,3 @@
-/**
- * Module: attachInstanceId.ts
- * Description: Docker utility functions for managing containers, volumes, and images.
- * Author: Shoval Shabi
- */
-
 import { v4 as uuidv4 } from "uuid"; // Import uuidv4 for generating instance ID
 import { Request, Response, NextFunction } from "express"; // Import types for Express
 

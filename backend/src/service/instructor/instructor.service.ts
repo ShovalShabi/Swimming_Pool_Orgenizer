@@ -6,6 +6,11 @@ import InstructorRepository from "../../repository/instructor/instructor.reposit
 import { Swimming } from "../../utils/swimming-enum.utils.js";
 import InstructorServiceInterface from "./IInstructor.service.js";
 
+/**
+ * Service for managing instructors.
+ * Implements the `InstructorServiceInterface` and provides methods for CRUD operations,
+ * validation, and business logic.
+ */
 export default class InstructorService implements InstructorServiceInterface {
   private instructorRepository: InstructorRepositoryInterface;
 
@@ -13,11 +18,17 @@ export default class InstructorService implements InstructorServiceInterface {
     this.instructorRepository = new InstructorRepository();
   }
 
-  async createInstructor(instructorData: NewInstructor) {
+  /**
+   * Creates a new instructor.
+   * @param instructorData - Data for the new instructor.
+   * @returns A promise that resolves to the newly created instructor.
+   * @throws {BadRequest} If the data is invalid.
+   */
+  async createInstructor(instructorData: NewInstructor): Promise<Instructor> {
     this.validateInstructorData(instructorData);
 
     const instructor: Instructor = new Instructor(
-      null, // instructorId will be assigned by the database
+      null, // `instructorId` will be assigned by the database
       instructorData.name,
       instructorData.specialties,
       instructorData.availabilities
@@ -26,16 +37,23 @@ export default class InstructorService implements InstructorServiceInterface {
     return this.instructorRepository.create(instructor);
   }
 
-  async getAllInstructors() {
+  /**
+   * Retrieves all instructors.
+   * @returns A promise that resolves to a list of all instructors.
+   */
+  async getAllInstructors(): Promise<Instructor[]> {
     return this.instructorRepository.findAll();
   }
 
   /**
-   * Get instructors by specialties
+   * Retrieves instructors by their specialties.
+   * @param specialties - Array of specialties to filter by.
+   * @returns A promise that resolves to a list of instructors with the specified specialties.
+   * @throws {BadRequest} If any specialty is invalid.
    */
-  async getInstructorsBySpecialties(specialties: Swimming[]) {
-    //NOTE: specialties can be empty
-    // Validate each specialty against the Swimming enum
+  async getInstructorsBySpecialties(
+    specialties: Swimming[]
+  ): Promise<Instructor[]> {
     for (const specialty of specialties) {
       if (!Object.values(Swimming).includes(specialty)) {
         throw new createHttpError.BadRequest(
@@ -49,12 +67,19 @@ export default class InstructorService implements InstructorServiceInterface {
     return this.instructorRepository.findBySpecialties(specialties);
   }
 
+  /**
+   * Retrieves instructors by their availability.
+   * @param day - The day of the week (0 for Sunday, 1 for Monday, etc.).
+   * @param startTime - The start time of the availability window.
+   * @param endTime - The end time of the availability window.
+   * @returns A promise that resolves to a list of available instructors.
+   * @throws {BadRequest} If the day or time range is invalid.
+   */
   async getInstructorsByAvailability(
     day: number,
     startTime: Date,
     endTime: Date
-  ) {
-    // Validate the day
+  ): Promise<Instructor[]> {
     if (isNaN(day) || day < 0 || day > 6) {
       throw new createHttpError.BadRequest(
         "Invalid day. Must be between 0 (Sunday) and 6 (Saturday)."
@@ -74,7 +99,6 @@ export default class InstructorService implements InstructorServiceInterface {
       );
     }
 
-    // Call the repository method with the given times
     return this.instructorRepository.findAvailableInstructors(
       day,
       startTime,
@@ -82,7 +106,13 @@ export default class InstructorService implements InstructorServiceInterface {
     );
   }
 
-  async getInstructorById(instructorId: string) {
+  /**
+   * Retrieves an instructor by their ID.
+   * @param instructorId - The unique identifier of the instructor.
+   * @returns A promise that resolves to the instructor.
+   * @throws {NotFound} If no instructor is found.
+   */
+  async getInstructorById(instructorId: string): Promise<Instructor> {
     const instructor = await this.instructorRepository.findById(instructorId);
 
     if (!instructor) {
@@ -94,14 +124,19 @@ export default class InstructorService implements InstructorServiceInterface {
     return instructor;
   }
 
-  async updateInstructor(instructorId: string, instructorData: Instructor) {
+  /**
+   * Updates an instructor by their ID.
+   * @param instructorId - The unique identifier of the instructor to update.
+   * @param instructorData - The updated instructor data.
+   * @returns A promise that resolves to the updated instructor or `null` if not found.
+   * @throws {NotFound} If no instructor is found with the given ID.
+   * @throws {BadRequest} If the data is invalid.
+   */
+  async updateInstructor(
+    instructorId: string,
+    instructorData: Instructor
+  ): Promise<Instructor | null> {
     const instructor = await this.getInstructorById(instructorId);
-
-    if (!instructor) {
-      throw new createHttpError.NotFound(
-        `Instructor with ID ${instructorId} not found`
-      );
-    }
 
     this.validateInstructorData(instructorData);
 
@@ -114,29 +149,44 @@ export default class InstructorService implements InstructorServiceInterface {
     return this.instructorRepository.update(instructorId, updatedInstructor);
   }
 
-  async deleteInstructor(instructorId: string) {
+  /**
+   * Deletes an instructor by their ID.
+   * @param instructorId - The unique identifier of the instructor to delete.
+   * @returns A promise that resolves to a boolean indicating success.
+   */
+  async deleteInstructor(instructorId: string): Promise<boolean> {
     return this.instructorRepository.delete(instructorId);
   }
 
-  async deleteAllInstructors() {
+  /**
+   * Deletes all instructors.
+   * @returns A promise that resolves to a boolean indicating success.
+   */
+  async deleteAllInstructors(): Promise<boolean> {
     return this.instructorRepository.deleteAll();
   }
 
-  validateInstructorData = (
+  /**
+   * Validates instructor data.
+   * Ensures that availabilities, specialties, and the instructor's name are valid.
+   * @param instructorData - The instructor data to validate.
+   * @throws {BadRequest} If any data is invalid.
+   */
+  private validateInstructorData(
     instructorData: Instructor | NewInstructor
-  ): void => {
+  ): void {
     if (
       instructorData.availabilities.length === 0 ||
       instructorData.availabilities.length > 7
     ) {
       throw new createHttpError.BadRequest(
-        "The availabilities for the new instructor must be between 1 and 7 entries." // each entry for each day od the week
+        "The availabilities for the new instructor must be between 1 and 7 entries."
       );
     }
 
     if (instructorData.specialties.length === 0) {
       throw new createHttpError.BadRequest(
-        "The instructor must have at least one specialty." // instructor can't be without specialties
+        "The instructor must have at least one specialty."
       );
     }
 
@@ -148,7 +198,6 @@ export default class InstructorService implements InstructorServiceInterface {
     // Validate each availability entry
     for (const availability of instructorData.availabilities) {
       if (typeof availability === "object") {
-        // Validate the `Date` objects
         if (
           isNaN(availability.startTime.getTime()) ||
           isNaN(availability.endTime.getTime())
@@ -182,10 +231,11 @@ export default class InstructorService implements InstructorServiceInterface {
       }
     }
 
-    if (numDays === 0)
+    if (numDays === 0) {
       throw new createHttpError.BadRequest(
         "Instructor must have some availability during the week."
       );
+    }
 
     // Validate each specialty against the Swimming enum
     for (const specialty of instructorData.specialties) {
@@ -197,5 +247,5 @@ export default class InstructorService implements InstructorServiceInterface {
         );
       }
     }
-  };
+  }
 }

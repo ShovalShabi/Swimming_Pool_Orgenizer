@@ -1,9 +1,3 @@
-/**
- * Module: logger.etc.ts
- * Description: Configures a logger using the Winston library for logging.
- * Author: Shoval Shabi
- */
-
 import {
   createLogger,
   format,

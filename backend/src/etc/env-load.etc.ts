@@ -1,11 +1,3 @@
-/**
- * Module: env-load.etc.ts
- * Description: Loads environment variables from .env files using dotenv-flow.
- * Can also be injected from the CLI using the cross-env module in package.json scripts.
- * Provides access to environment variables such as PORT and MONGO_URL.
- * Author: Shoval Shabi
- */
-
 import dotenv from "dotenv-flow"; // Import the dotenv-flow package for loading environment variables
 import { createCustomLogger } from "./logger.etc.js"; // Import the logger module
 import path from "path"; // Import the path module for logging purposes

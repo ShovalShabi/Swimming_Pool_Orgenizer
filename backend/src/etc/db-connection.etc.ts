@@ -1,9 +1,3 @@
-/**
- * Module: database.ts
- * Description: Handles database connection using Mongoose and logs connection status.
- * Author: Shoval Shabi
- */
-
 // Import required modules
 import mongoose from "mongoose";
 import { createCustomLogger } from "./logger.etc.js"; // Import the configured logger

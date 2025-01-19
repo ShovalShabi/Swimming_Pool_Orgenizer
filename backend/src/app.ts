@@ -1,9 +1,3 @@
-/**
- * Module: app.ts
- * Description: Configures and initializes the Express application.
- * Author: Shoval Shabi
- */
-
 // Import required modules
 import express, { Express } from "express";
 import { createCustomLogger } from "./etc/logger.etc.js"; // Import the configured logger

@@ -3,8 +3,17 @@ import { IInstructor } from "../../model/instructor.model.js";
 import { Swimming } from "../../utils/swimming-enum.utils.js";
 import StartAndEndTime, { Availability } from "./start-and-end-time.dto.js";
 
-// Instructor Class
+/**
+ * Class representing an Instructor.
+ */
 export default class Instructor {
+  /**
+   * Creates an instance of Instructor.
+   * @param instructorId - The unique identifier for the instructor (can be null for new instructors).
+   * @param name - The name of the instructor.
+   * @param specialties - An array of the instructor's specialties from the Swimming enum.
+   * @param availabilities - Weekly availability schedule (size 7, 0-Sunday, 1-Monday, etc.).
+   */
   constructor(
     public instructorId: string | null,
     public name: string,
@@ -13,13 +22,13 @@ export default class Instructor {
   ) {}
 
   /**
-   * Convert Mongoose Model (IInstructor) to Instructor DTO
-   * @param instructorDoc - Mongoose document (IInstructor)
-   * @returns Instance of Instructor DTO
+   * Converts a Mongoose Model (IInstructor) to an Instructor DTO.
+   * @param instructorDoc - The Mongoose document conforming to the IInstructor interface.
+   * @returns An instance of the Instructor class representing the DTO.
    */
   static fromModel(instructorDoc: IInstructor): Instructor {
     return new Instructor(
-      instructorDoc._id?.toString() || null, // Convert `_id` to string or keep it null,
+      instructorDoc._id?.toString() || null, // Convert `_id` to string or keep it null.
       instructorDoc.name,
       instructorDoc.specialties,
       instructorDoc.availabilities.map((avail) =>
@@ -31,8 +40,9 @@ export default class Instructor {
   }
 
   /**
-   * Convert Instructor DTO to Plain Object for Mongoose Model
-   * @returns Plain object for Mongoose Model (IInstructor)
+   * Converts an Instructor DTO to a plain object compatible with the Mongoose Model.
+   * @param instructor - An instance of the Instructor DTO.
+   * @returns A plain object conforming to the IInstructor interface, suitable for database operations.
    */
   static toModel(instructor: Instructor): Partial<IInstructor> {
     const modelData: Partial<IInstructor> = {
@@ -45,7 +55,7 @@ export default class Instructor {
       ),
     };
 
-    // If instructorId exists, set it as `_id` to ensure updates don't create new documents
+    // If instructorId exists, set it as `_id` to ensure updates don't create new documents.
     if (instructor.instructorId) {
       modelData._id = new mongoose.Types.ObjectId(instructor.instructorId);
     }

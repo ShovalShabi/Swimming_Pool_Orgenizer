@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import LessonService from "../service/lesson/lesson.service.js";
 import LessonServiceInterface from "../service/lesson/ILesson.service.js";
 
+/**
+ * Controller for handling lesson-related operations.
+ */
 export default class LessonController {
   private lessonService: LessonServiceInterface;
 
@@ -9,7 +12,12 @@ export default class LessonController {
     this.lessonService = new LessonService();
   }
 
-  // 1. Create a new lesson
+  /**
+   * Creates a new lesson.
+   * @param req - The Express request object. Expects lesson data in the body and `day` as a query parameter.
+   * @param res - The Express response object.
+   * @returns The newly created lesson.
+   */
   async createLesson(req: Request, res: Response): Promise<Response> {
     try {
       const dayOfTheWeek: number = parseInt(req.query.day as string);
@@ -25,7 +33,12 @@ export default class LessonController {
     }
   }
 
-  // 2. Get a lesson by ID
+  /**
+   * Retrieves a lesson by its ID.
+   * @param req - The Express request object. Expects `lessonId` as a route parameter.
+   * @param res - The Express response object.
+   * @returns The lesson with the specified ID.
+   */
   async getLessonById(req: Request, res: Response): Promise<Response> {
     try {
       const { lessonId } = req.params;
@@ -37,7 +50,12 @@ export default class LessonController {
     }
   }
 
-  // 3. Retrieve all lessons within a range
+  /**
+   * Retrieves all lessons within a specified date range.
+   * @param req - The Express request object. Expects `start` and `end` as query parameters.
+   * @param res - The Express response object.
+   * @returns A list of lessons within the specified range.
+   */
   async getAllLessonsWithinRange(
     req: Request,
     res: Response
@@ -56,7 +74,12 @@ export default class LessonController {
     }
   }
 
-  // 4. Get lessons of an instructor by day
+  /**
+   * Retrieves lessons of a specific instructor for a specific day.
+   * @param req - The Express request object. Expects `instructorId` as a route parameter and `day` as a query parameter.
+   * @param res - The Express response object.
+   * @returns A list of lessons for the specified instructor on the specified day.
+   */
   async getLessonsOfInstructorByDay(
     req: Request,
     res: Response
@@ -76,7 +99,12 @@ export default class LessonController {
     }
   }
 
-  // 5. Update a lesson by ID
+  /**
+   * Updates a lesson by its ID.
+   * @param req - The Express request object. Expects `lessonId` as a route parameter and updated lesson data in the body.
+   * @param res - The Express response object.
+   * @returns The updated lesson.
+   */
   async updateLesson(req: Request, res: Response): Promise<Response> {
     try {
       const { lessonId } = req.params;
@@ -93,7 +121,12 @@ export default class LessonController {
     }
   }
 
-  // 6. Delete a lesson by ID
+  /**
+   * Deletes a lesson by its ID.
+   * @param req - The Express request object. Expects `lessonId` as a route parameter.
+   * @param res - The Express response object.
+   * @returns A success message confirming the deletion.
+   */
   async deleteLesson(req: Request, res: Response): Promise<Response> {
     try {
       const { lessonId } = req.params;
@@ -105,7 +138,12 @@ export default class LessonController {
     }
   }
 
-  // 7. Delete all lessons
+  /**
+   * Deletes all lessons.
+   * @param req - The Express request object.
+   * @param res - The Express response object.
+   * @returns A success message confirming the deletion of all lessons.
+   */
   async deleteAllLessons(req: Request, res: Response): Promise<Response> {
     try {
       await this.lessonService.deleteAllLessons();

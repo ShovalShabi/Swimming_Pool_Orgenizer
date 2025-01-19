@@ -3,11 +3,15 @@ import NewLesson from "../../dto/lesson/new-lesson.dto.js";
 import LessonModel, { ILesson } from "../../model/lesson.model.js";
 import LessonRepositoryInterface from "./ILesson.repository.js";
 
+/**
+ * Repository for managing lesson data.
+ * Implements the `LessonRepositoryInterface` to interact with the database.
+ */
 export default class LessonRepository implements LessonRepositoryInterface {
   /**
-   * Creates a new lesson and returns it as a Lesson DTO.
-   * @param lessonData NewLesson DTO
-   * @returns Created Lesson DTO
+   * Creates a new lesson and saves it in the database.
+   * @param lessonData - The data for the new lesson.
+   * @returns A promise that resolves to the created lesson as a DTO.
    */
   async createLesson(lessonData: Lesson): Promise<Lesson> {
     const lessonModel = new LessonModel(Lesson.toModel(lessonData));
@@ -17,8 +21,8 @@ export default class LessonRepository implements LessonRepositoryInterface {
 
   /**
    * Retrieves a lesson by its ID.
-   * @param lessonId Lesson ID (UUID)
-   * @returns Lesson DTO if found, otherwise null
+   * @param lessonId - The unique identifier of the lesson.
+   * @returns A promise that resolves to the lesson as a DTO if found, otherwise `null`.
    */
   async getLessonById(lessonId: string): Promise<Lesson | null> {
     const lessonDoc = await LessonModel.findOne({ _id: lessonId }).exec();
@@ -26,10 +30,10 @@ export default class LessonRepository implements LessonRepositoryInterface {
   }
 
   /**
-   * Retrieves all lessons within a date range.
-   * @param start Start Date
-   * @param end End Date
-   * @returns Array of Lesson DTOs
+   * Retrieves all lessons within a specified date range.
+   * @param start - The start date of the range.
+   * @param end - The end date of the range.
+   * @returns A promise that resolves to an array of lessons as DTOs.
    */
   async getAllLessonsWithinRange(start: Date, end: Date): Promise<Lesson[]> {
     const lessonDocs = await LessonModel.find({
@@ -38,16 +42,21 @@ export default class LessonRepository implements LessonRepositoryInterface {
     return lessonDocs.map(Lesson.fromModel);
   }
 
+  /**
+   * Retrieves all lessons associated with a specific instructor.
+   * @param instructorId - The unique identifier of the instructor.
+   * @returns A promise that resolves to an array of lessons as DTOs.
+   */
   async getInstructorLessons(instructorId: string): Promise<Lesson[]> {
-    const lessonDocs = await LessonModel.find({ instructorId });
+    const lessonDocs = await LessonModel.find({ instructorId }).exec();
     return lessonDocs.map((doc) => Lesson.fromModel(doc));
   }
 
   /**
    * Updates a lesson by its ID.
-   * @param lessonId Lesson ID
-   * @param lessonData Update of Lesson DTO
-   * @returns True if update was successful, otherwise false
+   * @param lessonId - The unique identifier of the lesson to update.
+   * @param lessonData - The updated lesson data.
+   * @returns A promise that resolves to the updated lesson as a DTO if successful, otherwise `null`.
    */
   async updateLesson(
     lessonId: string,
@@ -55,15 +64,16 @@ export default class LessonRepository implements LessonRepositoryInterface {
   ): Promise<Lesson | null> {
     const updatedLesson = await LessonModel.findOneAndUpdate(
       { _id: lessonId },
-      Lesson.toModel(lessonData)
+      Lesson.toModel(lessonData),
+      { new: true } // Ensures the updated document is returned
     ).exec();
     return updatedLesson ? Lesson.fromModel(updatedLesson) : null;
   }
 
   /**
    * Deletes a lesson by its ID.
-   * @param lessonId Lesson ID
-   * @returns True if deletion was successful, otherwise false
+   * @param lessonId - The unique identifier of the lesson to delete.
+   * @returns A promise that resolves to `true` if the lesson was successfully deleted, otherwise `false`.
    */
   async deleteLesson(lessonId: string): Promise<boolean> {
     const result = await LessonModel.findOneAndDelete({ _id: lessonId }).exec();
@@ -72,7 +82,7 @@ export default class LessonRepository implements LessonRepositoryInterface {
 
   /**
    * Deletes all lessons from the database.
-   * @returns True if at least one lesson was deleted, otherwise false
+   * @returns A promise that resolves to `true` if at least one lesson was deleted, otherwise `false`.
    */
   async deleteAllLessons(): Promise<boolean> {
     const result = await LessonModel.deleteMany({}).exec();
