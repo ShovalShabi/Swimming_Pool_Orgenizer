@@ -1,5 +1,12 @@
 import React from "react";
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 
 interface Props {
   visible: boolean;
@@ -17,11 +24,13 @@ const CustomModal: React.FC<Props> = ({
   <Modal visible={visible} transparent animationType="slide">
     <View style={styles.modalContainer}>
       <View style={styles.modalContent}>
-        <Text style={styles.title}>{title}</Text>
-        {children}
-        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeText}>Close</Text>
-        </TouchableOpacity>
+        <ScrollView>
+          <Text style={styles.title}>{title}</Text>
+          {children}
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeText}>Close</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     </View>
   </Modal>
