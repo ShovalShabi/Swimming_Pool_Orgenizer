@@ -21,6 +21,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import StartAndEndTime from "../dto/instructor/start-and-end-time.dto";
 import Student from "../dto/student/student.dto";
 import HorizontalDivider from "../components/HorizontalDivider";
+import NewLesson from "../dto/lesson/new-lesson.dto";
 
 const { width, height } = Dimensions.get("window");
 
@@ -39,7 +40,6 @@ const getWeekDates = (offset: number) => {
 
 const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [lessonModalVisible, setLessonModalVisible] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{
     day: string;
     hour: string;
@@ -70,12 +70,9 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [endHourAndDate, setEndHourAndDate] = useState<Date | null>(null);
   const [startAndEndTime, setStartAndEndTime] =
     useState<StartAndEndTime | null>(null);
-  const [availableInstructorsInCell, setAvailableInstructorsInCell] = useState<
-    Instructor[]
-  >([]);
   const [modalAnchor, setModalAnchor] = useState(false);
-  const [studntsArr, setStudentsArr] = useState<Student[]>([]);
-  const [currentStudent, setCurentStudent] = useState<Student | null>(null);
+  const [studentsArr, setStudentsArr] = useState<Student[]>([]);
+  const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
   const [studnetSpecialties, setStudnetSpecialties] = useState<Swimming[]>(
     [] as Swimming[]
   );
@@ -139,6 +136,9 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setShowEndPicker(false);
     setStudentName("");
     setStartAndEndTime(null);
+    setStudentsArr([]);
+    setStudnetSpecialties([]);
+    setLessonType(LessonType.PUBLIC);
   };
   const handleChooseInstructor = (instructor: Instructor) => {
     setModalAnchor(true);
@@ -195,16 +195,27 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     if (studentName && studnetSpecialties && lessonType) {
       const student: Student = new Student(
         studentName,
-        studnetSpecialties,
+        [...studnetSpecialties],
         lessonType
       );
-
-      setStudentsArr([...studntsArr, student]);
+      setStudentsArr((prevStudents) => [...prevStudents, student]);
+      setStudnetSpecialties([]);
+      setStudentName("");
     }
   };
 
+  const toggleSpecialtySelection = (specialty: Swimming) => {
+    setStudnetSpecialties((prevSpecialties) => {
+      if (prevSpecialties.includes(specialty)) {
+        return prevSpecialties.filter((s) => s !== specialty);
+      } else {
+        return [...prevSpecialties, specialty];
+      }
+    });
+  };
+
   const handleRemoveStudent = (indexToRemove: number) => {
-    const newArray = studntsArr.filter((_, index) => index !== indexToRemove);
+    const newArray = studentsArr.filter((_, index) => index !== indexToRemove);
     setStudentsArr(newArray);
   };
 
@@ -214,6 +225,33 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const toggleAddLessonSection = () => {
     setAddNewLessonSection(addNewLessonSection ? false : true);
+  };
+
+  const handleCreateLesson = () => {
+    if (!selectedInstructor || !selectedInstructor.instructorId) {
+      console.log("instructor not defined");
+      return;
+    }
+
+    if (!specialties.length) {
+      console.log("there are no available specialties to the lesson");
+      return;
+    }
+
+    if (!startHourAndDate || !endHourAndDate) {
+      console.log("lesson's time frame is not defined");
+      return;
+    }
+
+    const newLesson: NewLesson = new NewLesson(
+      lessonType,
+      selectedInstructor.instructorId,
+      specialties,
+      new StartAndEndTime(startHourAndDate, endHourAndDate),
+      studentsArr
+    );
+
+    console.log(JSON.stringify(newLesson));
   };
 
   const handleCellPress = async (day: string, hour: string, date: Date) => {
@@ -339,7 +377,6 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 marginVertical={15}
               />
               <View>
-                <Text>Would You Like to add a New Lesson?</Text>
                 <Button
                   key={"OpenLessonSection"}
                   mode="contained"
@@ -470,12 +507,69 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         Add Time Frame
                       </Button>
                     </View>
-                    <TextInput
-                      value={studentName}
-                      onChangeText={setStudentName}
-                      placeholder="Enter Student Name"
-                      placeholderTextColor="#555"
-                      style={styles.input}
+                    <View>
+                      <TextInput
+                        value={studentName}
+                        onChangeText={setStudentName}
+                        placeholder="Enter Student Name"
+                        placeholderTextColor="#555"
+                        style={styles.input}
+                      />
+                      <Text>Select Specialties for Student:</Text>
+                      <View style={styles.specialtiesContainer}>
+                        {specialties.map((specialty, index) => (
+                          <Button
+                            key={index}
+                            mode={
+                              studnetSpecialties.includes(specialty)
+                                ? "contained"
+                                : "outlined"
+                            }
+                            onPress={() => toggleSpecialtySelection(specialty)}
+                            style={[
+                              styles.specialtyButton,
+                              studnetSpecialties.includes(specialty) &&
+                                styles.selectedSpecialty,
+                            ]}
+                          >
+                            {specialty}
+                          </Button>
+                        ))}
+                      </View>
+                      <Button
+                        onPress={handleAddStudent}
+                        style={styles.addStudentButton}
+                      >
+                        Add Student
+                      </Button>
+                    </View>
+
+                    <ScrollView style={styles.studentList}>
+                      {studentsArr.map((student, index) => (
+                        <View key={index} style={styles.studentItem}>
+                          <Text style={styles.studentText}>
+                            {student.name}: {student.preferences.join(", ")}
+                          </Text>
+                          <Button
+                            onPress={() => handleRemoveStudent(index)}
+                            mode="contained"
+                            style={styles.removeStudentButton}
+                          >
+                            X
+                          </Button>
+                        </View>
+                      ))}
+                    </ScrollView>
+                    <Button
+                      onPress={handleCreateLesson}
+                      style={styles.addButton}
+                    >
+                      Add Lesson
+                    </Button>
+                    <HorizontalDivider
+                      color="#888"
+                      thickness={2}
+                      marginVertical={15}
                     />
                   </View>
                 )}
@@ -662,6 +756,40 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 16,
     fontStyle: "italic",
+  },
+  studentList: {
+    maxHeight: 150,
+    marginVertical: 10,
+  },
+  addStudentButton: {
+    alignSelf: "flex-start",
+    marginVertical: 10,
+    backgroundColor: "#4caf50",
+  },
+  studentItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+    marginBottom: 5,
+  },
+  studentText: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+  },
+  removeStudentButton: {
+    backgroundColor: "#f44336",
+    marginLeft: 10,
+  },
+  specialtyButton: {
+    margin: 5,
+    borderRadius: 20,
+  },
+  selectedSpecialty: {
+    backgroundColor: "#4caf50",
   },
 });
 
