@@ -394,11 +394,11 @@ export default class LessonService implements LessonServiceInterface {
     }
 
     lessonData.students.map((student) => {
-      if (lessonData.typeLesson !== student.lessonType) {
-        throw new createHttpError.BadRequest(
-          `The student must take the same type of lesson, student chose ${student.lessonType} while the lesson is ${lessonData.typeLesson}`
-        );
-      }
+      // if (lessonData.typeLesson !== student.lessonType) {
+      //   throw new createHttpError.BadRequest(
+      //     `The student must take the same type of lesson, student chose ${student.lessonType} while the lesson is ${lessonData.typeLesson}`
+      //   );
+      // }
 
       if (
         !student.preferences.every((preference) =>
@@ -429,7 +429,7 @@ export default class LessonService implements LessonServiceInterface {
     const targetStart = targetLesson.startAndEndTime.startTime;
     const targetEnd = targetLesson.startAndEndTime.endTime;
 
-    arrExistingLessons.forEach((existingLesson) => {
+    for (const existingLesson of arrExistingLessons) {
       const existingStart = existingLesson.startAndEndTime.startTime;
       const existingEnd = existingLesson.startAndEndTime.endTime;
 
@@ -440,10 +440,18 @@ export default class LessonService implements LessonServiceInterface {
       const isOverlapping = startComparison < 0 && endComparison > 0;
 
       if (isOverlapping) {
+        // Check if the targetLesson is a Lesson and if it's the same lesson
+        if (
+          "lessonId" in targetLesson && // Check if targetLesson has 'lessonId'
+          targetLesson.lessonId === existingLesson.lessonId
+        ) {
+          continue; // Skip the comparison for the same lesson
+        }
+
         throw new createHttpError.BadRequest(
           `Overlapping lessons detected between new lesson and existing lesson ${existingLesson.lessonId}`
         );
       }
-    });
+    }
   };
 }
