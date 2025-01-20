@@ -7,6 +7,8 @@ import InstructorRepository from "../../repository/instructor/instructor.reposit
 import { Swimming } from "../../utils/swimming-enum.utils.js";
 import InstructorServiceInterface from "./IInstructor.service.js";
 import { createCustomLogger } from "../../etc/logger.etc.js";
+import LessonRepositoryInterface from "../../repository/lesson/ILesson.repository.js";
+import LessonRepository from "../../repository/lesson/lesson.repository.js";
 
 // Initialize the logger
 const logger = createCustomLogger({
@@ -23,9 +25,11 @@ const logger = createCustomLogger({
  */
 export default class InstructorService implements InstructorServiceInterface {
   private instructorRepository: InstructorRepositoryInterface;
+  private lessonRepository: LessonRepositoryInterface;
 
   constructor() {
     this.instructorRepository = new InstructorRepository();
+    this.lessonRepository = new LessonRepository();
   }
 
   /**
@@ -240,6 +244,13 @@ export default class InstructorService implements InstructorServiceInterface {
     try {
       const result = await this.instructorRepository.delete(instructorId);
       logger.info(`Instructor with ID ${instructorId} deleted successfully.`);
+
+      const resLessons =
+        await this.lessonRepository.deleteLessonsByInstructorId(instructorId);
+
+      if (resLessons)
+        logger.info(`All lessons of ${instructorId} deleted successfully.`);
+
       return result;
     } catch (error) {
       logger.error("Error occurred while deleting instructor:", error);
@@ -256,6 +267,10 @@ export default class InstructorService implements InstructorServiceInterface {
     try {
       const result = await this.instructorRepository.deleteAll();
       logger.info("All instructors deleted successfully.");
+      const resLessons = await this.lessonRepository.deleteAllLessons();
+
+      if (resLessons) logger.info("All lessons deleted successfully.");
+
       return result;
     } catch (error) {
       logger.error("Error occurred while deleting all instructors:", error);
