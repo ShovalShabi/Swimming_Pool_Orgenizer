@@ -19,6 +19,7 @@ import StartAndEndTime, {
   Availability,
 } from "../dto/instructor/start-and-end-time.dto";
 import NewInstructor from "../dto/instructor/new-instructor.dto";
+import useAlert from "../hooks/useAlert";
 
 const { width, height } = Dimensions.get("window");
 
@@ -42,6 +43,7 @@ const InstructorScreen: React.FC = () => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const navigation = useNavigation();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     const fetchInstructors = async () => {
@@ -107,8 +109,30 @@ const InstructorScreen: React.FC = () => {
     setAvailableDays(updatedAvailableDays);
   };
 
+  const checkIfValidInstructor = (): boolean => {
+    if (!availabilities.some((availability) => availability !== -1)) {
+      showAlert(
+        "The instructor must work at least one day during the week.",
+        "Warning"
+      );
+      return false;
+    }
+
+    if (!specialties.length) {
+      showAlert("The instructor must have some specialty.");
+      return false;
+    }
+    if (name.length === 0) {
+      showAlert("The instructor must have a name.");
+      return false;
+    }
+    return true;
+  };
+
   const handleSaveInstructor = async () => {
     if (selectedInstructor) {
+      if (!checkIfValidInstructor()) return;
+
       await InstructorService.updateInstructor(
         selectedInstructor.instructorId!,
         {
@@ -119,6 +143,8 @@ const InstructorScreen: React.FC = () => {
         }
       );
     } else {
+      if (!checkIfValidInstructor()) return;
+
       const newInstructor: NewInstructor = new NewInstructor(
         name,
         specialties,
