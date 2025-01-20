@@ -205,9 +205,6 @@ const InstructorScreen: React.FC = () => {
               setAvailableDays(updatedAvailableDays);
             }}
           >
-            <Text style={styles.systemId}>
-              System ID: {instructor.instructorId}
-            </Text>
             <Text>Specialties: {instructor.specialties.join(", ")}</Text>
           </CustomCard>
         ))}
@@ -223,11 +220,6 @@ const InstructorScreen: React.FC = () => {
       >
         <ScrollView style={styles.modalScrollable}>
           <View>
-            {selectedInstructor?.instructorId && (
-              <Text style={styles.systemId}>
-                System ID: {selectedInstructor.instructorId}
-              </Text>
-            )}
             <TextInput
               value={name}
               onChangeText={setName}
@@ -492,9 +484,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     marginVertical: 5,
     backgroundColor: "#f0f0f0",
-  },
-  systemId: {
-    color: "#d3d3d3",
   },
 });
 
