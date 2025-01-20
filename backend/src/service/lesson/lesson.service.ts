@@ -96,7 +96,7 @@ export default class LessonService implements LessonServiceInterface {
         throw new createHttpError.BadRequest(
           `The Instructor ${
             instructorData.name
-          } is available only for ${instStartTime.getUTCHours()}:${instStartTime.getUTCMinutes()} - ${instEndTime.getUTCHours()}:${instEndTime.getUTCMinutes()} on ${
+          } is available only for ${instStartTime.toLocaleTimeString()} - ${instEndTime.toLocaleTimeString()} on ${
             Object.values(DaysOfWeek)[dayOfTheWeek]
           }`
         );
@@ -266,7 +266,7 @@ export default class LessonService implements LessonServiceInterface {
         throw new createHttpError.BadRequest(
           `The Instructor ${
             instructorData.name
-          } is available only for ${instStartTime.getUTCHours()}:${instStartTime.getUTCMinutes()} - ${instEndTime.getUTCHours()}:${instEndTime.getUTCMinutes()} on ${
+          } is available only for ${instStartTime.toLocaleTimeString()} - ${instEndTime.toLocaleTimeString()} on ${
             Object.values(DaysOfWeek)[dayOfTheWeek]
           }`
         );
@@ -309,6 +309,36 @@ export default class LessonService implements LessonServiceInterface {
     const result = await this.lessonRepository.deleteLesson(lessonId);
     logger.info(`Lesson with ID ${lessonId} deleted successfully.`);
     return result;
+  }
+
+  /**
+   * Deletes all lessons with the specified instructorId.
+   * @param instructorId - The unique identifier of the instructor whose lessons should be deleted.
+   * @returns A promise that resolves to the number of lessons deleted.
+   */
+  async deleteLessonsByInstructorId(instructorId: string): Promise<number> {
+    logger.info(`Deleting all lessons for instructor with ID: ${instructorId}`);
+
+    // Validate instructor existence
+    const instructorExists = await this.instructorService.getInstructorById(
+      instructorId
+    );
+    if (!instructorExists) {
+      logger.error(`Instructor with ID ${instructorId} not found.`);
+      throw new createHttpError.NotFound(
+        `Instructor with ID ${instructorId} not found`
+      );
+    }
+
+    // Delete lessons
+    const deletedCount =
+      await this.lessonRepository.deleteLessonsByInstructorId(instructorId);
+
+    logger.info(
+      `Successfully deleted ${deletedCount} lessons for instructor with ID: ${instructorId}`
+    );
+
+    return deletedCount;
   }
 
   /**
