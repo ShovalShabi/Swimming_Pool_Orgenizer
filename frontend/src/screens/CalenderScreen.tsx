@@ -22,6 +22,8 @@ import StartAndEndTime from "../dto/instructor/start-and-end-time.dto";
 import Student from "../dto/student/student.dto";
 import HorizontalDivider from "../components/HorizontalDivider";
 import NewLesson from "../dto/lesson/new-lesson.dto";
+import axios from "axios";
+import useAlert from "../hooks/useAlert";
 
 const { width, height } = Dimensions.get("window");
 
@@ -71,6 +73,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [studnetSpecialties, setStudnetSpecialties] = useState<Swimming[]>(
     [] as Swimming[]
   );
+  const { showAlert } = useAlert();
 
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -84,19 +87,30 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     start.setSeconds(0);
     const end = new Date(weekDates[6].getTime() + 24 * 60 * 60 * 1000);
 
-    const fetchedLessons = await LessonService.getLessonsWithinRange(
-      start,
-      end
-    );
-    const normalizedLessons: Lesson[] = fetchedLessons.map((lesson) => ({
-      ...lesson,
-      startAndEndTime: {
-        startTime: new Date(lesson.startAndEndTime.startTime),
-        endTime: new Date(lesson.startAndEndTime.endTime),
-      },
-    }));
+    try {
+      const fetchedLessons = await LessonService.getLessonsWithinRange(
+        start,
+        end
+      );
+      const normalizedLessons: Lesson[] = fetchedLessons.map((lesson) => ({
+        ...lesson,
+        startAndEndTime: {
+          startTime: new Date(lesson.startAndEndTime.startTime),
+          endTime: new Date(lesson.startAndEndTime.endTime),
+        },
+      }));
 
-    setLessons(normalizedLessons);
+      setLessons(normalizedLessons);
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        // Display Axios error message or response details
+        const message = error.response?.data?.error || error.message;
+        showAlert(message, "Error");
+      } else {
+        // Handle non-Axios errors
+        showAlert("An unexpected error occurred.", "Error");
+      }
+    }
   };
 
   const fetchAvailableInstructors = async (
@@ -115,7 +129,14 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         instructors.length ? "" : "No instructors available for this time."
       );
     } catch (error) {
-      setErrorMessage("Error fetching instructors.");
+      if (axios.isAxiosError(error)) {
+        // Display Axios error message or response details
+        const message = error.response?.data?.error || error.message;
+        showAlert(message, "Error");
+      } else {
+        // Handle non-Axios errors
+        showAlert("An unexpected error occurred.", "Error");
+      }
     }
   };
   const clearFields = () => {
@@ -239,29 +260,99 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const handleCreateLesson = async () => {
+    // Validation based on lessonType
+
     if (!selectedInstructor || !selectedInstructor.instructorId) {
-      console.log("Instructor not defined");
+      showAlert("A lesson must be instructed by professional instructors.");
       return;
     }
 
     if (!specialties.length) {
-      console.log("there are no available specialties to the lesson");
+      showAlert("A lesson must contain swimming styles.", "Error");
       return;
     }
 
     if (!startHourAndDate || !endHourAndDate) {
-      console.log("lesson's time frame is not defined");
-      return;
-    }
-
-    if (!studentsArr.length) {
-      console.log("students cannot be empty");
+      showAlert("A lesson must be defined with a time frame.", "Error");
       return;
     }
 
     if (!selectedCell) {
       console.log("Cell is not defined");
       return;
+    }
+    const startTime = new Date(selectedCell.date);
+    startTime.setMilliseconds(0); // Clear milliseconds for accuracy
+
+    const endTime = new Date(selectedCell.date);
+    endTime.setMilliseconds(0); // Clear milliseconds for accuracy
+    endTime.setHours(startTime.getHours() + 1);
+
+    if (new Date() > endTime) {
+      showAlert("You cannot create lessons in past.", "Error");
+      return;
+    }
+    // Calculate the duration in minutes
+    const durationInMinutes =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+
+    if (lessonType === LessonType.PRIVATE && durationInMinutes !== 45) {
+      showAlert("Private lessons must be exactly 45 minutes.", "Error");
+      return;
+    }
+
+    if (lessonType === LessonType.PRIVATE && studentsArr.length !== 1) {
+      showAlert("There is must be one student for private lesson.", "Error");
+      return;
+    }
+
+    if (
+      (lessonType === LessonType.PUBLIC || lessonType === LessonType.MIXED) &&
+      durationInMinutes !== 60
+    ) {
+      showAlert(
+        "Public and Mixed lessons must be exactly 60 minutes.",
+        "Error"
+      );
+      return;
+    }
+
+    if (studentsArr.length < 1 && lessonType != LessonType.PRIVATE) {
+      showAlert(
+        "There is must be at lease one student for mixed/public lesson.",
+        "Error"
+      );
+      return;
+    }
+
+    if (!specialties.length) {
+      showAlert("A lesson must contain swimming styles.", "Error");
+      return;
+    }
+
+    if (
+      !studentsArr.every((student) =>
+        student.preferences.every((preference) =>
+          specialties.includes(preference)
+        )
+      )
+    ) {
+      showAlert(
+        "Every student's preferences must match the specialties taught in the lesson.",
+        "Error"
+      );
+      return;
+    }
+
+    // Validation for each student's preferences
+    for (const student of studentsArr) {
+      if (student.preferences.length === 0) {
+        showAlert(
+          "Every student's preferences must be at least one of the specialties that are being taught in the lesson.",
+          "Error"
+        );
+        return; // Exits the entire method
+      }
     }
 
     // Compose start and end date using the selected cell date and times
@@ -284,69 +375,193 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       studentsArr
     );
 
-    const serverResLesson: Lesson = await LessonService.createLesson(
-      newLesson,
-      newLesson.startAndEndTime.endTime.getDay()
-    );
-    setLessons([...lessons, serverResLesson]);
-    clearFields();
-    setModalVisible(false);
-    setAvailableInstructors([]);
-    fetchLessons();
+    try {
+      const serverResLesson: Lesson = await LessonService.createLesson(
+        newLesson,
+        newLesson.startAndEndTime.endTime.getDay()
+      );
+      setLessons([...lessons, serverResLesson]);
+      clearFields();
+      setModalVisible(false);
+      setAvailableInstructors([]);
+      fetchLessons();
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        // Display Axios error message or response details
+        const message = error.response?.data?.error || error.message;
+        showAlert(message, "Error");
+      } else {
+        // Handle non-Axios errors
+        showAlert("An unexpected error occurred.", "Error");
+        console.error("Error details:", error);
+      }
+    }
   };
 
   const handleUpdateLesson = async () => {
-    const startTime = startHourAndDate;
-    const endTime = endHourAndDate;
-
     if (selectedLesson) {
-      if (startTime && endTime) {
+      if (startHourAndDate && endHourAndDate) {
+        const startTime = new Date(selectedLesson.startAndEndTime.startTime);
+        startTime.setHours(startHourAndDate.getHours());
+        startTime.setMinutes(startHourAndDate.getMinutes());
+        startTime.setSeconds(startHourAndDate.getSeconds());
+        startTime.setMilliseconds(0); // Clear milliseconds for accuracy
+
+        const endTime = new Date(selectedLesson.startAndEndTime.startTime); // Use the same date as startTime
+        endTime.setHours(endHourAndDate.getHours());
+        endTime.setMinutes(endHourAndDate.getMinutes());
+        endTime.setSeconds(endHourAndDate.getSeconds());
+        endTime.setMilliseconds(0); // Clear milliseconds for accuracy
+
         const updatedLesson = new Lesson(
           selectedLesson.lessonId,
-          selectedLesson.typeLesson,
+          lessonType,
           specialties,
           selectedLesson.instructorId,
           new StartAndEndTime(startTime, endTime),
           studentsArr
         );
 
-        if (selectedLesson.lessonId) {
-          const serverReslesson: Lesson = await LessonService.updateLesson(
-            selectedLesson.lessonId,
-            updatedLesson
-          );
+        // Calculate the duration in minutes
+        const durationInMinutes =
+          (endTime.getTime() - startTime.getTime()) / (1000 * 60);
 
-          // Update the lessons directly in the state
-          setLessons((prevLessons) =>
-            prevLessons.map((lesson) =>
-              lesson.lessonId === serverReslesson.lessonId
-                ? serverReslesson
-                : lesson
-            )
-          );
-          handleRemoveSelectedLesson();
-          toggleEditLessonSection();
-          fetchLessons();
-          setAvailableInstructors([]);
-          setModalVisible(false);
+        if (new Date() > endTime) {
+          showAlert("You cannot edit lessons that already done.", "Error");
           return;
+        }
+
+        // Validation based on lessonType
+        if (lessonType === LessonType.PRIVATE && durationInMinutes !== 45) {
+          showAlert("Private lessons must be exactly 45 minutes.", "Error");
+          return;
+        }
+
+        if (lessonType === LessonType.PRIVATE && studentsArr.length !== 1) {
+          showAlert(
+            "There is must be one student for private lesson.",
+            "Error"
+          );
+          return;
+        }
+
+        if (
+          (lessonType === LessonType.PUBLIC ||
+            lessonType === LessonType.MIXED) &&
+          durationInMinutes !== 60
+        ) {
+          showAlert(
+            "Public and Mixed lessons must be exactly 60 minutes.",
+            "Error"
+          );
+          return;
+        }
+
+        if (studentsArr.length < 1 && lessonType !== LessonType.PRIVATE) {
+          showAlert(
+            "There is must be at lease one student for mixed/public lesson.",
+            "Error"
+          );
+          return;
+        }
+
+        if (!updatedLesson.specialties.length) {
+          showAlert("A lesson must contain swimming styles.", "Error");
+          return;
+        }
+
+        if (
+          !studentsArr.every((student) =>
+            student.preferences.every((preference) =>
+              specialties.includes(preference)
+            )
+          )
+        ) {
+          showAlert(
+            "Every student's preferences must match the specialties taught in the lesson.",
+            "Error"
+          );
+          return;
+        }
+        // Validation for each student's preferences
+        for (const student of studentsArr) {
+          if (student.preferences.length === 0) {
+            showAlert(
+              "Every student's preferences must be at least one of the specialties that are being taught in the lesson.",
+              "Error"
+            );
+            return; // Exits the entire method
+          }
+        }
+
+        try {
+          if (selectedLesson.lessonId) {
+            const serverReslesson: Lesson = await LessonService.updateLesson(
+              selectedLesson.lessonId,
+              updatedLesson
+            );
+
+            // Update the lessons directly in the state
+            setLessons((prevLessons) =>
+              prevLessons.map((lesson) =>
+                lesson.lessonId === serverReslesson.lessonId
+                  ? serverReslesson
+                  : lesson
+              )
+            );
+            handleRemoveSelectedLesson();
+            toggleEditLessonSection();
+            fetchLessons();
+            setAvailableInstructors([]);
+            setModalVisible(false);
+            return;
+          }
+        } catch (error: any) {
+          if (axios.isAxiosError(error)) {
+            // Display Axios error message or response details
+            const message = error.response?.data?.error || error.message;
+            showAlert(message, "Error");
+          } else {
+            // Handle non-Axios errors
+            showAlert("An unexpected error occurred.", "Error");
+          }
         }
         console.log("the lesson ID for update is not defined");
       }
-      console.log("start hour and end hour are not valid", startTime, endTime);
+      console.log(
+        "start hour and end hour are not valid",
+        startHourAndDate,
+        endHourAndDate
+      );
+      showAlert("Start hour and end hour are not valid", "Error");
     }
   };
 
   const handleDeleteLesson = () => {
     if (selectedLesson) {
       if (selectedLesson.lessonId) {
-        LessonService.deleteLessonById(selectedLesson.lessonId!);
-        handleRemoveSelectedLesson();
-        toggleEditLessonSection();
-        fetchLessons();
-        setAvailableInstructors([]);
-        setModalVisible(false);
-        return;
+        try {
+          if (new Date() > selectedLesson.startAndEndTime.endTime) {
+            showAlert("You cannot delete lessons that already done.", "Error");
+            return;
+          }
+          LessonService.deleteLessonById(selectedLesson.lessonId!);
+          handleRemoveSelectedLesson();
+          toggleEditLessonSection();
+          fetchLessons();
+          setAvailableInstructors([]);
+          setModalVisible(false);
+          return;
+        } catch (error: any) {
+          if (axios.isAxiosError(error)) {
+            // Display Axios error message or response details
+            const message = error.response?.data?.error || error.message;
+            showAlert(message, "Error");
+          } else {
+            // Handle non-Axios errors
+            showAlert("An unexpected error occurred.", "Error");
+          }
+        }
       }
       console.log("the lesson ID is invalid");
     }
