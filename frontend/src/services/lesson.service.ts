@@ -8,21 +8,37 @@ const { backendServerURL } = getEnvVariables();
 const BASE_URL = `${backendServerURL}/lesson`;
 
 export default class LessonService {
+  // Helper to wrap requests with error handling
+  static async requestWrapper<T>(request: () => Promise<T>): Promise<T> {
+    try {
+      return await request();
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        // Re-throw the Axios error for the caller to handle
+        throw error;
+      }
+      // If it's not an AxiosError, throw a generic error
+      throw new Error("An unexpected error occurred");
+    }
+  }
+
   // Create New Lesson
   static async createLesson(
     newLesson: NewLesson,
     day: number
   ): Promise<Lesson> {
-    const response = await axios.post<Lesson>(BASE_URL, newLesson, {
-      params: { day },
-    });
-    return response.data;
+    return this.requestWrapper(() =>
+      axios
+        .post<Lesson>(BASE_URL, newLesson, { params: { day } })
+        .then((res) => res.data)
+    );
   }
 
   // Get Lesson by Lesson ID
   static async getLessonById(lessonId: string): Promise<Lesson> {
-    const response = await axios.get<Lesson>(`${BASE_URL}/${lessonId}`);
-    return response.data;
+    return this.requestWrapper(() =>
+      axios.get<Lesson>(`${BASE_URL}/${lessonId}`).then((res) => res.data)
+    );
   }
 
   // Update Lesson
@@ -30,16 +46,18 @@ export default class LessonService {
     lessonId: string,
     updatedLesson: Lesson
   ): Promise<Lesson> {
-    const response = await axios.put<Lesson>(
-      `${BASE_URL}/${lessonId}`,
-      updatedLesson
+    return this.requestWrapper(() =>
+      axios
+        .put<Lesson>(`${BASE_URL}/${lessonId}`, updatedLesson)
+        .then((res) => res.data)
     );
-    return response.data;
   }
 
   // Delete Lesson by ID
   static async deleteLessonById(lessonId: string): Promise<void> {
-    await axios.delete(`${BASE_URL}/${lessonId}`);
+    return this.requestWrapper(() =>
+      axios.delete(`${BASE_URL}/${lessonId}`).then(() => undefined)
+    );
   }
 
   // Get All Lessons Between Date Range
@@ -47,10 +65,11 @@ export default class LessonService {
     start: Date,
     end: Date
   ): Promise<Lesson[]> {
-    const response = await axios.get<Lesson[]>(BASE_URL, {
-      params: { start, end },
-    });
-    return response.data;
+    return this.requestWrapper(() =>
+      axios
+        .get<Lesson[]>(BASE_URL, { params: { start, end } })
+        .then((res) => res.data)
+    );
   }
 
   // Get Instructor's Lessons by Specific Date
@@ -58,10 +77,12 @@ export default class LessonService {
     instructorId: string,
     day: Date
   ): Promise<Lesson[]> {
-    const response = await axios.get<Lesson[]>(
-      `${BASE_URL}/instructor/${instructorId}/day`,
-      { params: { day } }
+    return this.requestWrapper(() =>
+      axios
+        .get<Lesson[]>(`${BASE_URL}/instructor/${instructorId}/day`, {
+          params: { day },
+        })
+        .then((res) => res.data)
     );
-    return response.data;
   }
 }

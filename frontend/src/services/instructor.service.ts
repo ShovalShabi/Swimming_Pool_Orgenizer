@@ -9,20 +9,35 @@ const { backendServerURL } = getEnvVariables();
 const BASE_URL = `${backendServerURL}/instructor`;
 
 export default class InstructorService {
+  static async requestWrapper<T>(request: () => Promise<T>): Promise<T> {
+    try {
+      return await request();
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        // Re-throw the Axios error for the caller to handle
+        throw error;
+      }
+      // If it's not an AxiosError, throw a generic error
+      throw new Error("An unexpected error occurred");
+    }
+  }
+
   // Create New Instructor
   static async createInstructor(
     newInstructor: NewInstructor
   ): Promise<Instructor> {
-    const response = await axios.post<Instructor>(BASE_URL, newInstructor);
-    return response.data;
+    return this.requestWrapper(() =>
+      axios.post<Instructor>(BASE_URL, newInstructor).then((res) => res.data)
+    );
   }
 
   // Get Single Instructor by ID
   static async getInstructorById(instructorId: string): Promise<Instructor> {
-    const response = await axios.get<Instructor>(
-      `${BASE_URL}/single/${instructorId}`
+    return this.requestWrapper(() =>
+      axios
+        .get<Instructor>(`${BASE_URL}/single/${instructorId}`)
+        .then((res) => res.data)
     );
-    return response.data;
   }
 
   // Update Instructor
@@ -30,43 +45,48 @@ export default class InstructorService {
     instructorId: string,
     updatedInstructor: Instructor
   ): Promise<Instructor> {
-    const response = await axios.put<Instructor>(
-      `${BASE_URL}/${instructorId}`,
-      updatedInstructor
+    return this.requestWrapper(() =>
+      axios
+        .put<Instructor>(`${BASE_URL}/${instructorId}`, updatedInstructor)
+        .then((res) => res.data)
     );
-    return response.data;
   }
 
-  // Delete Instructor by ID
   static async deleteInstructorById(instructorId: string): Promise<void> {
-    await axios.delete(`${BASE_URL}/${instructorId}`);
+    return this.requestWrapper(() =>
+      axios.delete(`${BASE_URL}/${instructorId}`).then(() => undefined)
+    );
   }
 
-  // Get Instructors by Specialties
   static async getInstructorsBySpecialties(
     specialties: Swimming[]
   ): Promise<Instructor[]> {
-    const response = await axios.get<Instructor[]>(`${BASE_URL}/specialties`, {
-      params: { specialties },
-    });
-    return response.data;
+    return this.requestWrapper(() =>
+      axios
+        .get<Instructor[]>(`${BASE_URL}/specialties`, {
+          params: { specialties },
+        })
+        .then((res) => res.data)
+    );
   }
 
-  // Get Instructors by Availability
   static async getInstructorsByAvailability(
     day: number,
     startTime: Date,
     endTime: Date
   ): Promise<Instructor[]> {
-    const response = await axios.get<Instructor[]>(`${BASE_URL}/availability`, {
-      params: { day, startTime, endTime },
-    });
-    return response.data;
+    return this.requestWrapper(() =>
+      axios
+        .get<Instructor[]>(`${BASE_URL}/availability`, {
+          params: { day, startTime, endTime },
+        })
+        .then((res) => res.data)
+    );
   }
 
-  // Retrieve All Instructors
   static async getAllInstructors(): Promise<Instructor[]> {
-    const response = await axios.get<Instructor[]>(BASE_URL);
-    return response.data;
+    return this.requestWrapper(() =>
+      axios.get<Instructor[]>(BASE_URL).then((res) => res.data)
+    );
   }
 }
