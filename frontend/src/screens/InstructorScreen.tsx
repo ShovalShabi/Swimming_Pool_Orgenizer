@@ -172,6 +172,7 @@ const InstructorScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Instructors Hub</Text>
       <ScrollView horizontal contentContainerStyle={styles.scrollContainer}>
         <CustomCard
           title="+ Add Instructor"
@@ -393,6 +394,13 @@ const InstructorScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  title: {
+    fontSize: 40, // Increased font size for the title
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 40, // Lowered the title slightly
+    color: "#3b5998", // Optional title color
+  },
   selectedDayContainer: {
     flexDirection: "row",
     alignItems: "center",
