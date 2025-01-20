@@ -53,6 +53,13 @@ export default interface LessonRepositoryInterface {
   deleteLesson(lessonId: string): Promise<boolean>;
 
   /**
+   * Deletes all lessons for a specific instructor.
+   * @param instructorId - The unique identifier of the instructor whose lessons should be deleted.
+   * @returns A promise that resolves to the number of lessons deleted.
+   */
+  deleteLessonsByInstructorId(instructorId: string): Promise<number>;
+
+  /**
    * Deletes all lessons from the data source.
    * @returns A promise that resolves to `true` if all lessons were successfully deleted, or `false` otherwise.
    */

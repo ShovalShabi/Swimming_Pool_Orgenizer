@@ -154,6 +154,27 @@ export default class LessonRepository implements LessonRepositoryInterface {
   }
 
   /**
+   * Deletes all lessons for a specific instructor.
+   * @param instructorId - The unique identifier of the instructor whose lessons should be deleted.
+   * @returns A promise that resolves to the number of lessons deleted.
+   */
+  async deleteLessonsByInstructorId(instructorId: string): Promise<number> {
+    logger.info(`Deleting all lessons for instructor with ID: ${instructorId}`);
+    try {
+      const result = await LessonModel.deleteMany({ instructorId }).exec();
+      logger.info(
+        `Deleted ${result.deletedCount} lessons for instructor with ID: ${instructorId}`
+      );
+      return result.deletedCount || 0;
+    } catch (error: any) {
+      logger.error(
+        `Failed to delete lessons for instructor with ID ${instructorId}: ${error.message}`
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Deletes all lessons from the database.
    * @returns A promise that resolves to `true` if at least one lesson was deleted, otherwise `false`.
    */
