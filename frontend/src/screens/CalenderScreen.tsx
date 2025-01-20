@@ -238,7 +238,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setAddNewLessonSection(false);
   };
 
-  const handleCreateLesson = () => {
+  const handleCreateLesson = async () => {
     if (!selectedInstructor || !selectedInstructor.instructorId) {
       console.log("Instructor not defined");
       return;
@@ -259,10 +259,22 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       return;
     }
 
-    const start = new Date(startHourAndDate);
-    start.setSeconds(0, 0);
-    const end = new Date(endHourAndDate);
-    end.setSeconds(0, 0);
+    if (!selectedCell) {
+      console.log("Cell is not defined");
+      return;
+    }
+
+    // Compose start and end date using the selected cell date and times
+    const start = new Date(selectedCell.date);
+    start.setHours(
+      startHourAndDate.getHours(),
+      startHourAndDate.getMinutes(),
+      0,
+      0
+    );
+
+    const end = new Date(selectedCell.date);
+    end.setHours(endHourAndDate.getHours(), endHourAndDate.getMinutes(), 0, 0);
 
     const newLesson: NewLesson = new NewLesson(
       lessonType,
@@ -272,18 +284,21 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       studentsArr
     );
 
-    LessonService.createLesson(
+    const serverResLesson: Lesson = await LessonService.createLesson(
       newLesson,
-      newLesson.startAndEndTime.startTime.getDay()
+      newLesson.startAndEndTime.endTime.getDay()
     );
+    setLessons([...lessons, serverResLesson]);
     clearFields();
     setModalVisible(false);
     setAvailableInstructors([]);
+    fetchLessons();
   };
 
-  const handleUpdateLesson = () => {
+  const handleUpdateLesson = async () => {
     const startTime = startHourAndDate;
     const endTime = endHourAndDate;
+
     if (selectedLesson) {
       if (startTime && endTime) {
         const updatedLesson = new Lesson(
@@ -294,28 +309,46 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           new StartAndEndTime(startTime, endTime),
           studentsArr
         );
-        console.log(updatedLesson);
 
-        handleRemoveSelectedLesson();
-        toggleEditLessonSection();
-        fetchLessons();
-      } else {
-        console.log(
-          "start hour and end hour are not valid",
-          startTime,
-          endTime
-        );
+        if (selectedLesson.lessonId) {
+          const serverReslesson: Lesson = await LessonService.updateLesson(
+            selectedLesson.lessonId,
+            updatedLesson
+          );
+
+          // Update the lessons directly in the state
+          setLessons((prevLessons) =>
+            prevLessons.map((lesson) =>
+              lesson.lessonId === serverReslesson.lessonId
+                ? serverReslesson
+                : lesson
+            )
+          );
+          handleRemoveSelectedLesson();
+          toggleEditLessonSection();
+          fetchLessons();
+          setAvailableInstructors([]);
+          setModalVisible(false);
+          return;
+        }
+        console.log("the lesson ID for update is not defined");
       }
+      console.log("start hour and end hour are not valid", startTime, endTime);
     }
   };
 
   const handleDeleteLesson = () => {
     if (selectedLesson) {
-      handleRemoveSelectedLesson();
-      toggleEditLessonSection();
-      fetchLessons();
-      setAvailableInstructors([]);
-      setModalVisible(false);
+      if (selectedLesson.lessonId) {
+        LessonService.deleteLessonById(selectedLesson.lessonId!);
+        handleRemoveSelectedLesson();
+        toggleEditLessonSection();
+        fetchLessons();
+        setAvailableInstructors([]);
+        setModalVisible(false);
+        return;
+      }
+      console.log("the lesson ID is invalid");
     }
   };
 
@@ -418,6 +451,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           setEditLessonSection(false);
           setModalVisible(false);
           setAvailableInstructors([]);
+          setSelectedLesson(null);
         }}
       >
         <ScrollView>
