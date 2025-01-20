@@ -158,6 +158,10 @@ export default class InstructorRepository
           minutes: new Date(availability.endTime).getMinutes(),
           seconds: new Date(availability.endTime).getSeconds(),
         };
+        if (requestedEndTime.hours === 0) {
+          // corner case for not overflow to the next day
+          requestedEndTime.hours = 24;
+        }
 
         const startCondition =
           startTimeComponents.hours < requestedStartTime.hours ||
