@@ -7,7 +7,9 @@
     "build": "npx tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "concurrently \"npx tsc -w\"  \"cross-env NODE_ENV=dev nodemon dist/server.js\"",
-    "prod": "cross-env NODE_ENV=prod node ./dist/server.js"
+    "prod": "cross-env NODE_ENV=prod node ./dist/server.js",
+    "dev-docker": "concurrently \"npx tsc -w\"  \"cross-env MONGO_HOST_TYPE=mongo-db NODE_ENV=dev nodemon dist/server.js\"",
+    "prod-docker": "cross-env MONGO_HOST_TYPE=mongo-db NODE_ENV=prod node ./dist/server.js"
   },
   "keywords": [],
   "author": "",

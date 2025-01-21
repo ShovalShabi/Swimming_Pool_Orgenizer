@@ -1,0 +1,36 @@
+services:  # Defines the services that make up your application
+
+  # Development service
+  development:
+    build:  # Specifies how to build the service's container image
+      context: .  # Build context is the current directory
+      dockerfile: Dockerfile  # Specifies the Dockerfile to use for building the image
+    ports:
+      - "6001:6001"
+    command: npm run dev-docker  # Command to run when the container starts
+    depends_on:  # Specifies that this service depends on the mongo-db service
+      - mongo-db
+
+  # Production service
+  production:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run prod-docker
+    ports:
+      - "6000:6000" # Maps port 3000 on the host to an ephemeral port in the container for the production service.
+    depends_on:
+      - mongo-db
+
+  # MongoDB service
+  mongo-db:
+    image: mongo:latest  # Specifies the MongoDB image to use
+    ports:  # Exposes port 27017 on the host and forwards it to port 27017 in the MongoDB container
+      - "27017:27017"
+    restart: always  # Specifies that the container should always be restarted if it stops
+    volumes:  # Specifies persistent storage for MongoDB data
+      - mongodb_data:/data/db
+
+volumes:  # Defines named volumes used by the services
+  mongodb_data:  # Named volume for MongoDB data
+    driver: local  # Specifies the local driver for the volume
