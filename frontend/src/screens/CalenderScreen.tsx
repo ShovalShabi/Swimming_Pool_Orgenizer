@@ -286,7 +286,11 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     const endTime = new Date(selectedCell.date);
     endTime.setMilliseconds(0); // Clear milliseconds for accuracy
-    endTime.setHours(startTime.getHours() + 1);
+    if (lessonType !== LessonType.PRIVATE) {
+      endTime.setHours(startTime.getHours() + 1);
+    } else {
+      endTime.setMinutes(startTime.getMinutes() + 45);
+    }
 
     if (new Date() > endTime) {
       showAlert("You cannot create lessons in past.", "Error");
