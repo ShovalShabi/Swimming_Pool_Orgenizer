@@ -7,7 +7,7 @@ services:  # Defines the services that make up your application
       dockerfile: Dockerfile  # Specifies the Dockerfile to use for building the image
     ports:
       - "6001:6001"
-    command: npm run dev-docker  # Command to run when the container starts
+    command: sh -c "npm run build && npm run dev-docker"  # Command to run when the container starts
     depends_on:  # Specifies that this service depends on the mongo-db service
       - mongo-db
 
@@ -16,9 +16,9 @@ services:  # Defines the services that make up your application
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm run prod-docker
+    command: sh -c "npm run build && npm run prod-docker"
     ports:
-      - "6000:6000" # Maps port 3000 on the host to an ephemeral port in the container for the production service.
+      - "6000:6000" # Maps port 6000 on the host to an 6000 port in the container for the production service.
     depends_on:
       - mongo-db
 
