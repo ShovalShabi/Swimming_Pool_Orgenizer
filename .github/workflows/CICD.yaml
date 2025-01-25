@@ -59,9 +59,9 @@ jobs:
           npm run test
         working-directory: ./backend
         env:
-          - NODE_ENV: test
-          - PORT: 0
-          - DB_NAME: ShiftTest
+          NODE_ENV: test
+          PORT: 0
+          DB_NAME: ShiftTest
 
       # Step 7: Build the application
       - name: Build application
