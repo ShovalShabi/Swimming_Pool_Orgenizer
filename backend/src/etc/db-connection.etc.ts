@@ -32,6 +32,7 @@ export const connectToDatabase = async (): Promise<void> => {
   } catch (error) {
     // Log connection error and exit process with error code
     logger.error("MongoDB connection error:", error);
+    console.log(`Failed mongo url: ${MONGO_URL}`);
     process.exit(1);
   }
 };
