@@ -67,6 +67,7 @@ describe("InstructorService", () => {
       expect(mockInstructorRepo.create).toHaveBeenCalledWith(
         expect.any(Instructor)
       );
+      expect(result).toHaveProperty("instructorId");
     });
 
     it("should throw BadRequest if availabilities length is invalid", async () => {
