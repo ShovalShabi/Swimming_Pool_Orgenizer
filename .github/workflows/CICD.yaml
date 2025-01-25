@@ -47,13 +47,29 @@ jobs:
             echo ".env.test file not found!" && exit 1
           fi
 
-      # Step 5: Install dependencies
+      # Step 5: Start MongoDB for Tests
+      - name: Start MongoDB container
+        run: |
+          docker-compose -f backend/docker-compose.yml up -d mongo-db
+
+      # Step 6: Wait for MongoDB to be ready
+      - name: Wait for MongoDB to be ready
+        run: |
+          echo "Waiting for MongoDB to be ready..."
+          for i in {1..30}; do
+            nc -z localhost 27017 && echo "MongoDB is ready!" && exit 0
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+          echo "MongoDB did not become ready in time!" && exit 1
+
+      # Step 7: Install dependencies
       - name: Install dependencies
         run: |
           npm install
         working-directory: ./backend
 
-      # Step 6: Run tests
+      # Step 8: Run tests
       - name: Run tests
         run: |
           npm run test
@@ -64,7 +80,7 @@ jobs:
           PORT: 0
           DB_NAME: ShiftTest
 
-      # Step 7: Build the application
+      # Step 9: Build the application
       - name: Build application
         run: |
           npm run build
