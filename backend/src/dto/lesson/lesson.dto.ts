@@ -39,7 +39,10 @@ export default class Lesson {
       lessonDoc.typeLesson,
       lessonDoc.specialties,
       lessonDoc.instructorId.toString(),
-      lessonDoc.startAndEndTime,
+      new StartAndEndTime(
+        lessonDoc.startAndEndTime.startTime,
+        lessonDoc.startAndEndTime.endTime
+      ),
       lessonDoc.students.map(
         (student) =>
           new Student(student.name, student.preferences, student.lessonType)
