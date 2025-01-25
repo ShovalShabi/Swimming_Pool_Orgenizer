@@ -188,8 +188,8 @@ describe("Lesson Controller Integration Tests", () => {
 
     const response = await request(app)
       .put(`/lesson/${lessonId}`)
-      .send(updatedLesson);
-    //   .expect(200);
+      .send(updatedLesson)
+      .expect(200);
 
     expect(response.body).toHaveProperty("lessonId", lessonId);
     expect(response.body.typeLesson).toBe("PUBLIC");
