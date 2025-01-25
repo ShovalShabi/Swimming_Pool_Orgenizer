@@ -51,6 +51,7 @@ jobs:
       - name: Start MongoDB container
         run: |
           docker-compose -f backend/docker-compose.yml up -d mongo-db
+        working-directory: ./backend
 
       # Step 6: Wait for MongoDB to be ready
       - name: Wait for MongoDB to be ready
