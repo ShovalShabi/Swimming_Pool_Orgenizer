@@ -47,7 +47,11 @@ export default class LessonController {
       return res.status(201).json(newLesson);
     } catch (error: any) {
       logger.error("Error creating lesson:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : "An error occurred during lesson creation.";
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -66,7 +70,11 @@ export default class LessonController {
       return res.status(200).json(lesson);
     } catch (error: any) {
       logger.error(`Error fetching lesson with ID ${lessonId}:`, error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while retriving a lesson with ID ${lessonId}.`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -96,7 +104,11 @@ export default class LessonController {
       return res.status(200).json(lessons);
     } catch (error: any) {
       logger.error("Error fetching lessons within the specified range:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred during lessons retrieval in range ${start.toLocaleDateString()} - ${end.toLocaleDateString()}.`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -129,7 +141,11 @@ export default class LessonController {
         `Error fetching lessons for instructor ${instructorId} on day ${day}:`,
         error
       );
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while retriving instructor ${instructorId} by day ${day}.`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -153,7 +169,11 @@ export default class LessonController {
       return res.status(200).json(updatedLesson);
     } catch (error: any) {
       logger.error(`Error updating lesson with ID ${lessonId}:`, error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while updating a lesson with ID ${lessonId}.`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -172,7 +192,11 @@ export default class LessonController {
       return res.status(200).json({ message: "Lesson deleted successfully" });
     } catch (error: any) {
       logger.error(`Error deleting lesson with ID ${lessonId}:`, error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while deleting a lesson with ID ${lessonId}.`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -192,7 +216,11 @@ export default class LessonController {
         .json({ message: "All lessons deleted successfully" });
     } catch (error: any) {
       logger.error("Error deleting all lessons:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while deleting all lessons.`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 }

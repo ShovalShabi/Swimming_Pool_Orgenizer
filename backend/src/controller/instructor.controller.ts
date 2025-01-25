@@ -44,7 +44,11 @@ export default class InstructorController {
       return res.status(201).json(newInstructor);
     } catch (error: any) {
       logger.error("Error creating instructor:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : "An error occurred while creating an instructor.";
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -63,7 +67,11 @@ export default class InstructorController {
       return res.status(200).json(instructors);
     } catch (error: any) {
       logger.error("Error fetching all instructors:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : "An error occurred while fetching all instructors.";
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -96,7 +104,11 @@ export default class InstructorController {
       return res.status(200).json(instructors);
     } catch (error: any) {
       logger.error("Error fetching instructors by specialties:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : "An error occurred while fetching instructors by specialties.";
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -131,7 +143,11 @@ export default class InstructorController {
       return res.status(200).json(instructors);
     } catch (error: any) {
       logger.error("Error fetching instructors by availability:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : "An error occurred while fetching instructors by availability.";
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -153,7 +169,11 @@ export default class InstructorController {
       return res.status(200).json(instructor);
     } catch (error: any) {
       logger.error(`Error fetching instructor with ID ${instructorId}:`, error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while fetching instructor with ID ${instructorId}`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -180,7 +200,11 @@ export default class InstructorController {
       return res.status(200).json(updatedInstructor);
     } catch (error: any) {
       logger.error(`Error updating instructor with ID ${instructorId}:`, error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while updating instructor with ID ${instructorId}`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -203,7 +227,11 @@ export default class InstructorController {
         .json({ message: "Instructor deleted successfully" });
     } catch (error: any) {
       logger.error(`Error deleting instructor with ID ${instructorId}:`, error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while deleting instructor with ID ${instructorId}`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 
@@ -223,7 +251,11 @@ export default class InstructorController {
         .json({ message: "All instructors deleted successfully" });
     } catch (error: any) {
       logger.error("Error deleting all instructors:", error);
-      return res.status(500).json({ error: error.message });
+      const errorMessage =
+        process.env.NODE_ENV !== "prod"
+          ? error.message
+          : `An error occurred while deleting all instructors`;
+      return res.status(error.status || 500).json({ error: errorMessage });
     }
   }
 }
