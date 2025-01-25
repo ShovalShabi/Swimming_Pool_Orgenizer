@@ -133,8 +133,8 @@ jobs:
           for service in "${services[@]}"; do
             image_id=$(docker-compose images --quiet "$service")
             if [ -n "$image_id" ]; then
-              docker tag "$image_id" "${{ secrets.DOCKERHUB_USERNAME }}/ShiftImagesRepository:$service-latest"
-              docker push "${{ secrets.DOCKERHUB_USERNAME }}/ShiftImagesRepository:$service-latest"
+              docker tag "$image_id" "${{ secrets.DOCKERHUB_USERNAME }}/shift_images_repository:$service-latest"
+              docker push "${{ secrets.DOCKERHUB_USERNAME }}/shift_images_repository:$service-latest"
             fi
           done
         working-directory: ./backend
