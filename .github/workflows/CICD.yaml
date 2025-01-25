@@ -26,7 +26,13 @@ jobs:
         with:
           node-version: "21"
 
-      # Step 3: Create .env.test file
+      # Step 3: Install Docker Compose
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      # Step 4: Create .env.test file
       - name: Create .env.test for CI/CD
         run: |
           echo "MONGO_PORT=27017" >> backend/.env.test
@@ -40,20 +46,20 @@ jobs:
           echo "DEBUG_LOGGING=debug" >> backend/.env.test
           echo "SILLY_LOGGING=silly" >> backend/.env.test
 
-      # Step 4: Validate .env.test creation
+      # Step 5: Validate .env.test creation
       - name: Validate .env.test creation
         run: |
           if [ ! -f backend/.env.test ]; then
             echo ".env.test file not found!" && exit 1
           fi
 
-      # Step 5: Start MongoDB for Tests
+      # Step 6: Start MongoDB for Tests
       - name: Start MongoDB container
         run: |
           docker-compose -f backend/docker-compose.yml up -d mongo-db
         working-directory: ./backend
 
-      # Step 6: Wait for MongoDB to be ready
+      # Step 7: Wait for MongoDB to be ready
       - name: Wait for MongoDB to be ready
         run: |
           echo "Waiting for MongoDB to be ready..."
@@ -64,13 +70,13 @@ jobs:
           done
           echo "MongoDB did not become ready in time!" && exit 1
 
-      # Step 7: Install dependencies
+      # Step 8: Install dependencies
       - name: Install dependencies
         run: |
           npm install
         working-directory: ./backend
 
-      # Step 8: Run tests
+      # Step 9: Run tests
       - name: Run tests
         run: |
           npm run test
@@ -81,7 +87,7 @@ jobs:
           PORT: 0
           DB_NAME: ShiftTest
 
-      # Step 9: Build the application
+      # Step 10: Build the application
       - name: Build application
         run: |
           npm run build
@@ -110,8 +116,6 @@ jobs:
       # Step 4: Build and start Docker Compose services
       - name: Build and start Docker Compose services
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
           docker-compose -f backend/docker-compose.yml up --build -d
 
       # Step 5: Tear down Docker Compose
