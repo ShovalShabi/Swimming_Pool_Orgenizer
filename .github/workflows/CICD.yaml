@@ -31,7 +31,7 @@ jobs:
         run: |
           echo "MONGO_PORT=27017" >> backend/.env.test
           echo "DB_NAME=ShiftTest" >> backend/.env.test
-          echo "MONGO_URL=mongodb://mongo-db:27017/ShiftTest" >> backend/.env.test
+          echo `mongodb://${HOST_TYPE}:${MONGO_PORT}/${DB_NAME}` >> backend/.env.test
           echo "PORT=0" >> backend/.env.test
           echo "ERROR_LOGGING=error" >> backend/.env.test
           echo "WARN_LOGGING=warn" >> backend/.env.test
@@ -59,7 +59,9 @@ jobs:
           npm run test
         working-directory: ./backend
         env:
-          NODE_ENV: test
+          - NODE_ENV: test
+          - PORT: 0
+          - DB_NAME: ShiftTest
 
       # Step 7: Build the application
       - name: Build application
