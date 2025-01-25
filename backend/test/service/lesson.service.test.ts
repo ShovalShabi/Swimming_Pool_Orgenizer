@@ -85,8 +85,6 @@ describe("LessonService", () => {
       mockInstructorService.getInstructorById.mockResolvedValue(instructor);
       mockLessonRepo.createLesson.mockResolvedValue(createdLesson);
 
-      console.log(`Created lesson: ${JSON.stringify(createdLesson, null, 2)}`);
-
       const result = await service.createLesson(newLesson, 2);
       expect(result).toEqual(createdLesson);
       expect(mockLessonRepo.createLesson).toHaveBeenCalledWith(
