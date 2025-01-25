@@ -82,7 +82,7 @@ jobs:
           npm run test
         working-directory: ./backend
         env:
-          HOST_TYPE: mongo-db
+          HOST_TYPE: localhost
           NODE_ENV: test
           PORT: 0
           DB_NAME: ShiftTest
