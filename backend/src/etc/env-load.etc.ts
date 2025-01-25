@@ -31,11 +31,11 @@ logger.info(`Server Port: ${PORT}`);
 export const serverURL: string = `http://localhost:${PORT}`;
 
 /**
- * Constant: MONGO_HOST_TYPE
+ * Constant: HOST_TYPE
  * Description: Represents the type of the host (dockerized or localhost).
  * Defaults to localhost if not specified in the environment variables.
  */
-const MONGO_HOST_TYPE: string = process.env.MONGO_HOST_TYPE || "localhost";
+const MONGO_HOST_TYPE: string = process.env.HOST_TYPE || "localhost";
 
 /**
  * Constant: MONGO_PORT
