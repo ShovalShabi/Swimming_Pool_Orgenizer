@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx tsc",
-    "test": "cross-env NODE_ENV=prod PORT=0 DB_NAME=ShiftTest NODE_OPTIONS=--experimental-vm-modules jest --verbose --coverage --config jest.config.json",
+    "test": "cross-env NODE_ENV=test PORT=0 DB_NAME=ShiftTest NODE_OPTIONS=--experimental-vm-modules jest --verbose --coverage --config jest.config.json",
     "dev": "concurrently \"npx tsc -w\"  \"cross-env NODE_ENV=dev nodemon ./dist/src/server.js\"",
     "prod": "cross-env NODE_ENV=prod node ./dist/src/server.js",
     "dev-docker": "concurrently \"npx tsc -w\"  \"cross-env MONGO_HOST_TYPE=mongo-db NODE_ENV=dev nodemon ./dist/src/server.js\"",
