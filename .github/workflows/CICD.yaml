@@ -56,7 +56,7 @@ jobs:
       # Step 6: Start MongoDB for Tests
       - name: Start MongoDB container
         run: |
-          docker-compose -f backend/docker-compose.yml up -d mongo-db
+          docker-compose up -d mongo-db
         working-directory: ./backend
 
       # Step 7: Wait for MongoDB to be ready
@@ -116,19 +116,22 @@ jobs:
       # Step 4: Build and start Docker Compose services
       - name: Build and start Docker Compose services
         run: |
-          docker-compose -f backend/docker-compose.yml up --build -d
+          docker-compose up --build -d
+        working-directory: ./backend
 
       # Step 5: Tear down Docker Compose
       - name: Tear Down Docker Compose
         if: always()
         run: |
-          docker-compose -f backend/docker-compose.yml down
+          docker-compose down
+        working-directory: ./backend
 
       # Step 6: Output logs
       - name: Output logs for all services
         run: |
           echo "Service logs:"
           docker-compose logs
+        working-directory: ./backend
 
       # Step 7: Upload log file
       - name: Upload log file
