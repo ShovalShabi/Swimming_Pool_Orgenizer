@@ -126,21 +126,30 @@ jobs:
           docker-compose up --build -d
         working-directory: ./backend
 
-      # Step 6: Tear down Docker Compose
+      # Step 6: Tag and push images to Docker Hub
+      - name: Tag and push images to Docker Hub
+        run: |
+          docker-compose images --quiet | while read -r image_id; do
+            docker tag "$image_id" "${{ secrets.DOCKERHUB_USERNAME }}/$(basename "$image_id")"
+            docker push "${{ secrets.DOCKERHUB_USERNAME }}/$(basename "$image_id")"
+          done
+        working-directory: ./backend
+
+      # Step 7: Tear down Docker Compose
       - name: Tear Down Docker Compose
         if: always()
         run: |
           docker-compose down
         working-directory: ./backend
 
-      # Step 7: Output logs
+      # Step 8: Output logs
       - name: Output logs for all services
         run: |
           echo "Service logs:"
           docker-compose logs
         working-directory: ./backend
 
-      # Step 8: Upload log file
+      # Step 9: Upload log file
       - name: Upload log file
         uses: actions/upload-artifact@v3
         with:
