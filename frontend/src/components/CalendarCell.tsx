@@ -16,17 +16,30 @@ const CalendarCell: React.FC<Props> = ({
   <TouchableOpacity
     style={[
       styles.cell,
-      isHighlighted && styles.highlighted,
       cellLessons.length > 0 && styles.withLessons,
+      isHighlighted && styles.highlighted,
     ]}
     onPress={onPress}
   >
-    {cellLessons.length > 0 && (
+    {cellLessons.length >= 3 && (
       <View style={styles.notification}>
         <Text style={styles.notificationText}>{cellLessons.length}</Text>
       </View>
     )}
-    <Text style={styles.text}></Text>
+    {cellLessons.length < 3 && (
+      <View style={styles.lessonContent}>
+        {cellLessons.map((lesson, index) => (
+          <View key={index} style={styles.lessonInfo}>
+            <Text style={styles.lessonType}>{lesson.typeLesson}</Text>
+            <Text style={styles.lessonSpecialties}>
+              {lesson.specialties.length > 1
+                ? "Mixed Swimming Styles"
+                : lesson.specialties.join(", ")}
+            </Text>
+          </View>
+        ))}
+      </View>
+    )}
   </TouchableOpacity>
 );
 
@@ -37,28 +50,24 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
     justifyContent: "center",
-    position: "relative", // Ensure notification positioning works
-    width: "100%", // Consistent cell width
-    height: 50, // Consistent cell height
+    position: "relative",
+    width: 145,
+    height: 125,
+    backgroundColor: "transparent", // Make the background transparent
   },
   highlighted: {
-    backgroundColor: "#d0f0fd",
+    backgroundColor: "#d0f0fd", // Subtle blue for the current hour cell
   },
   withLessons: {
-    backgroundColor: "#c8e6c9", // Light green to indicate lessons
-  },
-  text: {
-    fontSize: 14,
-    color: "#333",
+    backgroundColor: "#c8e6c9", // Light green for cells with lessons
   },
   notification: {
     position: "absolute",
     top: 5,
     right: 5,
     backgroundColor: "red",
-    borderRadius: 12, // Ensure a perfect circle
-    width: 24, // Adjust size to fully surround text
-    paddingHorizontal: 8, // Add horizontal padding for larger numbers
+    borderRadius: 12,
+    width: 24,
     height: 24,
     alignItems: "center",
     justifyContent: "center",
@@ -67,6 +76,25 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     fontWeight: "bold",
+  },
+  lessonContent: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  lessonInfo: {
+    marginBottom: 5,
+    alignItems: "center",
+  },
+  lessonType: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  lessonSpecialties: {
+    fontSize: 12,
+    color: "#555",
   },
 });
 
