@@ -36,13 +36,15 @@ let newLesson: NewLesson = new NewLesson(
     {
       name: "Jane Doe",
       preferences: ["BACK_STROKE"],
-      lessonType: "PUBLIC",
+      phoneNumber: "0502452651",
     } as Student,
   ]
 );
 
 describe("Lesson Controller Integration Tests", () => {
   beforeAll(async () => {
+    // Add a delay to ensure database operations complete
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     // Connect to a test database
     await connect();
   });
@@ -96,7 +98,7 @@ describe("Lesson Controller Integration Tests", () => {
         expect.objectContaining({
           name: "Jane Doe",
           preferences: ["BACK_STROKE"],
-          lessonType: "PUBLIC",
+          phoneNumber: "0502452651",
         }),
       ])
     );
@@ -181,7 +183,7 @@ describe("Lesson Controller Integration Tests", () => {
         {
           name: "John Smith",
           preferences: ["BACK_STROKE"] as Swimming[],
-          lessonType: "PUBLIC" as LessonType,
+          phoneNumber: "0502452743",
         },
       ]
     );
