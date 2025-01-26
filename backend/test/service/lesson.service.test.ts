@@ -68,10 +68,13 @@ describe("LessonService", () => {
           {
             name: "Jane Doe",
             preferences: [Swimming.BACK_STROKE],
-            lessonType: LessonType.PUBLIC,
+            phoneNumber: "0502452651",
           },
         ]
       );
+
+      //On creation and there are no available lessons at all
+      mockLessonRepo.getAllLessonsWithinRange.mockResolvedValue([]);
 
       const createdLesson = new Lesson(
         "12345",
@@ -105,7 +108,7 @@ describe("LessonService", () => {
           {
             name: "Jane Doe",
             preferences: [Swimming.BACK_STROKE],
-            lessonType: LessonType.PUBLIC,
+            phoneNumber: "0502452651",
           },
         ]
       );
@@ -149,7 +152,7 @@ describe("LessonService", () => {
           {
             name: "Jane Doe",
             preferences: [Swimming.BACK_STROKE],
-            lessonType: LessonType.PUBLIC,
+            phoneNumber: "0502452651",
           },
         ]
       );
@@ -161,7 +164,7 @@ describe("LessonService", () => {
       );
     });
 
-    it("should throw BadRequest if lesson overlaps with existing lessons", async () => {
+    it("should throw BadRequest if lesson overlaps with existing lessons of certain instructor", async () => {
       const instructor = new Instructor(
         "123",
         "John Doe",
@@ -192,7 +195,7 @@ describe("LessonService", () => {
           {
             name: "Jane Doe",
             preferences: [Swimming.BACK_STROKE],
-            lessonType: LessonType.PUBLIC,
+            phoneNumber: "0502452651",
           },
         ]
       );
@@ -210,13 +213,145 @@ describe("LessonService", () => {
           {
             name: "John Doe",
             preferences: [Swimming.BACK_STROKE],
-            lessonType: LessonType.PUBLIC,
+            phoneNumber: "0502452651",
           },
         ]
       );
 
       mockInstructorService.getInstructorById.mockResolvedValue(instructor);
       mockLessonRepo.getInstructorLessons.mockResolvedValue([
+        overlappingLesson,
+      ]);
+
+      await expect(service.createLesson(newLesson, 2)).rejects.toThrow(
+        createHttpError.BadRequest
+      );
+    });
+
+    it("should throw BadRequest for overlapping lesson at the beginning with the same student phone number", async () => {
+      const anotherInstructor = new Instructor(
+        "456",
+        "Walter White",
+        [Swimming.BACK_STROKE],
+        [
+          -1,
+          -1,
+          new StartAndEndTime(
+            new Date("2025-01-14T09:00:00Z"),
+            new Date("2025-01-14T17:00:00Z")
+          ),
+          -1,
+          -1,
+          -1,
+          -1,
+        ]
+      );
+
+      const newLesson = new NewLesson(
+        LessonType.PUBLIC,
+        "123",
+        [Swimming.BACK_STROKE],
+        new StartAndEndTime(
+          new Date("2025-01-14T10:00:00Z"),
+          new Date("2025-01-14T11:00:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      const overlappingLesson = new Lesson(
+        "54321",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        anotherInstructor.instructorId!,
+        new StartAndEndTime(
+          new Date("2025-01-14T09:30:00Z"),
+          new Date("2025-01-14T10:30:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      mockInstructorService.getInstructorById.mockResolvedValue(
+        anotherInstructor
+      );
+      mockLessonRepo.getAllLessonsWithinRange.mockResolvedValue([
+        overlappingLesson,
+      ]);
+
+      await expect(service.createLesson(newLesson, 2)).rejects.toThrow(
+        createHttpError.BadRequest
+      );
+    });
+
+    it("should throw BadRequest for overlapping lesson at the end with the same student phone number", async () => {
+      const anotherInstructor = new Instructor(
+        "456",
+        "Walter White",
+        [Swimming.BACK_STROKE],
+        [
+          -1,
+          -1,
+          new StartAndEndTime(
+            new Date("2025-01-14T09:00:00Z"),
+            new Date("2025-01-14T17:00:00Z")
+          ),
+          -1,
+          -1,
+          -1,
+          -1,
+        ]
+      );
+
+      const newLesson = new NewLesson(
+        LessonType.PUBLIC,
+        "123",
+        [Swimming.BACK_STROKE],
+        new StartAndEndTime(
+          new Date("2025-01-14T10:00:00Z"),
+          new Date("2025-01-14T11:00:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      const overlappingLesson = new Lesson(
+        "54321",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        anotherInstructor.instructorId!,
+        new StartAndEndTime(
+          new Date("2025-01-14T10:45:00Z"),
+          new Date("2025-01-14T11:45:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      mockInstructorService.getInstructorById.mockResolvedValue(
+        anotherInstructor
+      );
+      mockLessonRepo.getAllLessonsWithinRange.mockResolvedValue([
         overlappingLesson,
       ]);
 
@@ -241,7 +376,7 @@ describe("LessonService", () => {
           {
             name: "Jane Doe",
             preferences: [Swimming.BACK_STROKE],
-            lessonType: LessonType.PUBLIC,
+            phoneNumber: "0502452651",
           },
         ]
       );
@@ -260,6 +395,301 @@ describe("LessonService", () => {
     });
   });
 
+  describe("updateLesson", () => {
+    it("should successfully update a lesson", async () => {
+      const instructor = new Instructor(
+        "123",
+        "John Doe",
+        [Swimming.BACK_STROKE],
+        [
+          -1,
+          -1,
+          new StartAndEndTime(
+            new Date("2025-01-14T09:00:00Z"),
+            new Date("2025-01-14T17:00:00Z")
+          ),
+          -1,
+          -1,
+          -1,
+          -1,
+        ]
+      );
+
+      const existingLesson = new Lesson(
+        "123",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        "123",
+        new StartAndEndTime(
+          new Date("2025-01-14T10:00:00Z"),
+          new Date("2025-01-14T11:00:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      const updatedLessonData = new Lesson(
+        "123",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        "123",
+        new StartAndEndTime(
+          new Date("2025-01-14T11:00:00Z"),
+          new Date("2025-01-14T12:00:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      mockInstructorService.getInstructorById.mockResolvedValue(instructor);
+      mockLessonRepo.getLessonById.mockResolvedValue(existingLesson);
+      mockLessonRepo.updateLesson.mockResolvedValue(updatedLessonData);
+      mockLessonRepo.getAllLessonsWithinRange.mockResolvedValue([
+        existingLesson,
+      ]);
+
+      expect(existingLesson.lessonId !== null).toBeTruthy();
+
+      const result = await service.updateLesson(
+        existingLesson.lessonId!,
+        updatedLessonData
+      );
+      expect(result).toEqual(updatedLessonData);
+      expect(mockLessonRepo.updateLesson).toHaveBeenCalledWith(
+        existingLesson.lessonId,
+        updatedLessonData
+      );
+    });
+
+    it("should throw BadRequest for overlapping lesson at the beginning during update with the same student phone number", async () => {
+      const anotherInstructor = new Instructor(
+        "456",
+        "Walter White",
+        [Swimming.BACK_STROKE],
+        [
+          -1,
+          -1,
+          new StartAndEndTime(
+            new Date("2025-01-14T09:00:00Z"),
+            new Date("2025-01-14T17:00:00Z")
+          ),
+          -1,
+          -1,
+          -1,
+          -1,
+        ]
+      );
+
+      const existingLesson = new Lesson(
+        "123",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        "123",
+        new StartAndEndTime(
+          new Date("2025-01-14T10:00:00Z"),
+          new Date("2025-01-14T11:00:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      const overlappingLesson = new Lesson(
+        "54321",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        anotherInstructor.instructorId!,
+        new StartAndEndTime(
+          new Date("2025-01-14T09:30:00Z"),
+          new Date("2025-01-14T10:30:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      mockInstructorService.getInstructorById.mockResolvedValue(
+        anotherInstructor
+      );
+      mockLessonRepo.getAllLessonsWithinRange.mockResolvedValue([
+        overlappingLesson,
+      ]);
+      mockLessonRepo.getLessonById.mockResolvedValue(existingLesson);
+
+      expect(existingLesson.lessonId !== null).toBeTruthy();
+
+      await expect(
+        service.updateLesson(existingLesson.lessonId!, existingLesson)
+      ).rejects.toThrow(createHttpError.BadRequest);
+    });
+
+    it("should throw NotFound if trying to update a lesson that does not exist", async () => {
+      const lessonData = new Lesson(
+        "123",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        "123",
+        new StartAndEndTime(
+          new Date("2025-01-14T11:00:00Z"),
+          new Date("2025-01-14T12:00:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      mockLessonRepo.getLessonById.mockResolvedValue(null);
+
+      await expect(service.updateLesson("123", lessonData)).rejects.toThrow(
+        createHttpError.NotFound
+      );
+    });
+
+    it("should throw BadRequest for overlapping lesson at the end during update with the same student phone number", async () => {
+      const anotherInstructor = new Instructor(
+        "456",
+        "Walter White",
+        [Swimming.BACK_STROKE],
+        [
+          -1,
+          -1,
+          new StartAndEndTime(
+            new Date("2025-01-14T09:00:00Z"),
+            new Date("2025-01-14T17:00:00Z")
+          ),
+          -1,
+          -1,
+          -1,
+          -1,
+        ]
+      );
+
+      const existingLesson = new Lesson(
+        "123",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        "123",
+        new StartAndEndTime(
+          new Date("2025-01-14T10:00:00Z"),
+          new Date("2025-01-14T11:00:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      const overlappingLesson = new Lesson(
+        "54321",
+        LessonType.PUBLIC,
+        [Swimming.BACK_STROKE],
+        anotherInstructor.instructorId!,
+        new StartAndEndTime(
+          new Date("2025-01-14T10:45:00Z"),
+          new Date("2025-01-14T11:45:00Z")
+        ),
+        [
+          {
+            name: "Jane Doe",
+            preferences: [Swimming.BACK_STROKE],
+            phoneNumber: "0502452651",
+          },
+        ]
+      );
+
+      mockInstructorService.getInstructorById.mockResolvedValue(
+        anotherInstructor
+      );
+      mockLessonRepo.getAllLessonsWithinRange.mockResolvedValue([
+        overlappingLesson,
+      ]);
+      mockLessonRepo.getLessonById.mockResolvedValue(existingLesson);
+
+      expect(existingLesson.lessonId !== null).toBeTruthy();
+
+      await expect(
+        service.updateLesson(existingLesson.lessonId!, existingLesson)
+      ).rejects.toThrow(createHttpError.BadRequest);
+    });
+  });
+
+  describe("getAllLessonsWithinRange", () => {
+    it("should retrieve all lessons within a specified date range", async () => {
+      const lessons = [
+        new Lesson(
+          "123",
+          LessonType.PUBLIC,
+          [Swimming.BACK_STROKE],
+          "123",
+          new StartAndEndTime(
+            new Date("2025-01-14T10:00:00Z"),
+            new Date("2025-01-14T11:00:00Z")
+          ),
+          [
+            {
+              name: "Jane Doe",
+              preferences: [Swimming.BACK_STROKE],
+              phoneNumber: "0502452651",
+            },
+          ]
+        ),
+      ];
+
+      mockLessonRepo.getAllLessonsWithinRange.mockResolvedValue(lessons);
+
+      const result = await service.getAllLessonsWithinRange(
+        new Date("2025-01-14T09:00:00Z"),
+        new Date("2025-01-14T12:00:00Z")
+      );
+      expect(result).toEqual(lessons);
+      expect(mockLessonRepo.getAllLessonsWithinRange).toHaveBeenCalledWith(
+        new Date("2025-01-14T09:00:00Z"),
+        new Date("2025-01-14T12:00:00Z")
+      );
+    });
+
+    it("should throw BadRequest for invalid date range", async () => {
+      await expect(
+        service.getAllLessonsWithinRange(
+          new Date("invalid-date"),
+          new Date("2025-01-14T12:00:00Z")
+        )
+      ).rejects.toThrow(createHttpError.BadRequest);
+
+      await expect(
+        service.getAllLessonsWithinRange(
+          new Date("2025-01-14T09:00:00Z"),
+          new Date("invalid-date")
+        )
+      ).rejects.toThrow(createHttpError.BadRequest);
+    });
+  });
+
   describe("deleteLesson", () => {
     it("should delete a lesson by ID", async () => {
       mockLessonRepo.deleteLesson.mockResolvedValue(true);
@@ -274,6 +704,35 @@ describe("LessonService", () => {
 
       const result = await service.deleteLesson("123");
       expect(result).toBe(false);
+    });
+
+    it("should throw NotFound if trying to delete a lesson that does not exist", async () => {
+      mockLessonRepo.deleteLesson.mockResolvedValue(true);
+
+      const result = await service.deleteLesson("123");
+      expect(result).toBe(true);
+      expect(mockLessonRepo.deleteLesson).toHaveBeenCalledWith("123");
+    });
+
+    it("should delete all lessons for a given instructor ID", async () => {
+      mockInstructorService.getInstructorById.mockResolvedValue(
+        new Instructor("123", "John Doe", [Swimming.BACK_STROKE], [])
+      );
+      mockLessonRepo.deleteLessonsByInstructorId.mockResolvedValue(3);
+
+      const result = await service.deleteLessonsByInstructorId("123");
+      expect(result).toBe(3);
+      expect(mockLessonRepo.deleteLessonsByInstructorId).toHaveBeenCalledWith(
+        "123"
+      );
+    });
+
+    it("should throw NotFound if trying to delete lessons for a non-existent instructor ID", async () => {
+      mockInstructorService.getInstructorById.mockResolvedValue(null);
+
+      await expect(service.deleteLessonsByInstructorId("123")).rejects.toThrow(
+        createHttpError.NotFound
+      );
     });
   });
 
