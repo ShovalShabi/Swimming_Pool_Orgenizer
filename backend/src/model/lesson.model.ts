@@ -36,10 +36,9 @@ const StudentSchema = new Schema<Student>({
     enum: Object.values(Swimming),
     required: true,
   },
-  /** The lesson type the student is enrolled in. */
-  lessonType: {
+  /** The phone number that the student has been registered with. */
+  phoneNumber: {
     type: String,
-    enum: Object.values(LessonType),
     required: true,
   },
 });

@@ -11,11 +11,11 @@ export default class Student {
    * @param name - The name of the student.
    * @param preferences - An array of swimming preferences, represented by the `Swimming` enum
    *                      (e.g., [Swimming.FREESTYLE, Swimming.BACKSTROKE]).
-   * @param lessonType - The type of lesson the student prefers, represented by the `LessonType` enum (e.g., LessonType.PUBLIC).
+   * @param phoneNumber - The phone number that the student has been registered with (e.g., 0502452651).
    */
   constructor(
     public name: string,
     public preferences: Swimming[], // e.g., [Swimming.FREESTYLE, Swimming.BACKSTROKE]
-    public lessonType: LessonType // e.g., LessonType.PUBLIC
+    public phoneNumber: string // e.g., 0502452651
   ) {}
 }

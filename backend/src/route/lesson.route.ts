@@ -68,11 +68,10 @@ const lessonController = new LessonController();
  *                   type: string
  *                 description: The preferences of the student.
  *                 example: ["BACK_STROKE"]
- *               lessonType:
+ *               phoneNumber:
  *                 type: string
- *                 enum: [PUBLIC, PRIVATE]
- *                 description: Preferred type of lesson.
- *                 example: "PRIVATE"
+ *                 description: The phone number of the student.
+ *                 example: "0502452651"
  *     Lesson:
  *       type: object
  *       allOf:
@@ -242,7 +241,7 @@ lessonRouter.get(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/NewLesson'
+ *             $ref: '#/components/schemas/Lesson'
  *     responses:
  *       200:
  *         description: Lesson updated successfully.
