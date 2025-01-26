@@ -367,6 +367,139 @@ describe("InstructorService", () => {
     });
   });
 
+  describe("getInstructorById", () => {
+    it("should retrieve an instructor by ID", async () => {
+      const instructorId = "123";
+      const instructor = new Instructor(
+        instructorId,
+        "John Doe",
+        ["BACK_STROKE"] as Swimming[],
+        [
+          -1,
+          -1,
+          {
+            startTime: new Date("2025-01-16T09:00:00Z"),
+            endTime: new Date("2025-01-16T17:00:00Z"),
+          },
+          -1,
+          -1,
+          -1,
+          -1,
+        ]
+      );
+
+      mockInstructorRepo.findById.mockResolvedValue(instructor);
+
+      const result = await service.getInstructorById(instructorId);
+
+      expect(result).toEqual(instructor);
+      expect(mockInstructorRepo.findById).toHaveBeenCalledWith(instructorId);
+    });
+
+    it("should throw NotFound if instructor does not exist", async () => {
+      const instructorId = "999";
+
+      mockInstructorRepo.findById.mockResolvedValue(null);
+
+      await expect(service.getInstructorById(instructorId)).rejects.toThrow(
+        createHttpError.NotFound
+      );
+    });
+  });
+
+  describe("getInstructorsBySpecialties", () => {
+    it("should retrieve instructors by specialties", async () => {
+      const specialties = ["BACK_STROKE"] as Swimming[];
+      const instructors = [
+        new Instructor("123", "John Doe", specialties, [
+          -1,
+          -1,
+          {
+            startTime: new Date("2025-01-16T09:00:00Z"),
+            endTime: new Date("2025-01-16T17:00:00Z"),
+          },
+          -1,
+          -1,
+          -1,
+          -1,
+        ]),
+      ];
+
+      mockInstructorRepo.findBySpecialties.mockResolvedValue(instructors);
+
+      const result = await service.getInstructorsBySpecialties(specialties);
+
+      expect(result).toEqual(instructors);
+      expect(mockInstructorRepo.findBySpecialties).toHaveBeenCalledWith(
+        specialties
+      );
+    });
+
+    it("should throw BadRequest for invalid specialties", async () => {
+      const specialties = ["INVALID_SPECIALTY"];
+
+      await expect(
+        service.getInstructorsBySpecialties(specialties as Swimming[])
+      ).rejects.toThrow(createHttpError.BadRequest);
+    });
+  });
+
+  describe("getInstructorsByAvailability", () => {
+    it("should retrieve instructors by availability", async () => {
+      const day = 2;
+      const startTime = new Date("2025-01-16T09:00:00Z");
+      const endTime = new Date("2025-01-16T17:00:00Z");
+      const instructors = [
+        new Instructor("123", "John Doe", ["BACK_STROKE"] as Swimming[], [
+          -1,
+          -1,
+          { startTime, endTime },
+          -1,
+          -1,
+          -1,
+          -1,
+        ]),
+      ];
+
+      mockInstructorRepo.findAvailableInstructors.mockResolvedValue(
+        instructors
+      );
+
+      const result = await service.getInstructorsByAvailability(
+        day,
+        startTime,
+        endTime
+      );
+
+      expect(result).toEqual(instructors);
+      expect(mockInstructorRepo.findAvailableInstructors).toHaveBeenCalledWith(
+        day,
+        startTime,
+        endTime
+      );
+    });
+
+    it("should throw BadRequest for invalid day", async () => {
+      const day = 7;
+      const startTime = new Date("2025-01-16T09:00:00Z");
+      const endTime = new Date("2025-01-16T17:00:00Z");
+
+      await expect(
+        service.getInstructorsByAvailability(day, startTime, endTime)
+      ).rejects.toThrow(createHttpError.BadRequest);
+    });
+
+    it("should throw BadRequest for invalid time range", async () => {
+      const day = 2;
+      const startTime = new Date("2025-01-16T17:00:00Z");
+      const endTime = new Date("2025-01-16T09:00:00Z");
+
+      await expect(
+        service.getInstructorsByAvailability(day, startTime, endTime)
+      ).rejects.toThrow(createHttpError.BadRequest);
+    });
+  });
+
   describe("deleteInstructor", () => {
     it("should delete instructor by ID", async () => {
       const instructorId = "123";
@@ -389,6 +522,29 @@ describe("InstructorService", () => {
       mockInstructorRepo.delete.mockRejectedValue(new Error("Delete failed"));
 
       await expect(service.deleteInstructor(instructorId)).rejects.toThrow(
+        "Delete failed"
+      );
+    });
+  });
+
+  describe("deleteAllInstructors", () => {
+    it("should delete all instructors and their lessons", async () => {
+      mockInstructorRepo.deleteAll.mockResolvedValue(true);
+      mockLessonRepo.deleteAllLessons.mockResolvedValue(true);
+
+      const result = await service.deleteAllInstructors();
+
+      expect(result).toBe(true);
+      expect(mockInstructorRepo.deleteAll).toHaveBeenCalledTimes(1);
+      expect(mockLessonRepo.deleteAllLessons).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle errors during deletion", async () => {
+      mockInstructorRepo.deleteAll.mockRejectedValue(
+        new Error("Delete failed")
+      );
+
+      await expect(service.deleteAllInstructors()).rejects.toThrow(
         "Delete failed"
       );
     });
