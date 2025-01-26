@@ -56,6 +56,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [selectedInstructor, setSelectedInstructor] =
     useState<Instructor | null>(null);
   const [studentName, setStudentName] = useState("");
+  const [studentPhoneNumber, setstudentPhoneNumber] = useState("");
   const [availableSpecialties, setAvailableSpecialties] = useState<Swimming[]>(
     [] as Swimming[]
   );
@@ -149,6 +150,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setEndHourAndDate(null);
     setShowEndPicker(false);
     setStudentName("");
+    setstudentPhoneNumber("");
     setStudentsArr([]);
     setStudnetSpecialties([]);
     setLessonType(LessonType.PUBLIC);
@@ -190,6 +192,7 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setEndHourAndDate(null);
     setShowEndPicker(false);
     setStudentName("");
+    setstudentPhoneNumber("");
     setStudentsArr([]);
     setStudnetSpecialties([]);
     setLessonType(LessonType.PUBLIC);
@@ -218,16 +221,19 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const handleAddStudent = () => {
-    if (studentName && studnetSpecialties && lessonType) {
+    if (studentName && studnetSpecialties.length > 0 && studentPhoneNumber) {
       const student: Student = new Student(
         studentName,
         [...studnetSpecialties],
-        lessonType
+        studentPhoneNumber
       );
       setStudentsArr([...studentsArr, student]);
       setStudnetSpecialties([]);
       setStudentName("");
+      setstudentPhoneNumber("");
+      return;
     }
+    showAlert("Student must have name, phone number and prefences");
   };
 
   const toggleSpecialtySelection = (specialty: Swimming) => {
@@ -901,7 +907,14 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     <TextInput
                       value={studentName}
                       onChangeText={setStudentName}
-                      placeholder="Enter Student Name"
+                      placeholder="Enter Student's Name"
+                      placeholderTextColor="#555"
+                      style={styles.input}
+                    />
+                    <TextInput
+                      value={studentPhoneNumber}
+                      onChangeText={setstudentPhoneNumber}
+                      placeholder="Enter Student's Phone Number"
                       placeholderTextColor="#555"
                       style={styles.input}
                     />
@@ -938,7 +951,8 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     {studentsArr.map((student, index) => (
                       <View key={index} style={styles.studentItem}>
                         <Text style={styles.studentText}>
-                          {student.name}: {student.preferences.join(", ")}
+                          {student.name + " | " + student.phoneNumber}:{" "}
+                          {student.preferences.join(", ")}
                         </Text>
                         <Button
                           onPress={() => handleRemoveStudent(index)}
