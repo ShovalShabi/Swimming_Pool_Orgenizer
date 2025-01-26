@@ -264,8 +264,29 @@ const InstructorScreen: React.FC = () => {
                   <Button
                     key={day}
                     onPress={() => {
+                      // Prepare the updated availableDays array
+                      let updatedAvailableDays = [...availableDays];
+
+                      if (selectedDay) {
+                        // Return the previously selected day to availableDays
+                        updatedAvailableDays = [
+                          ...updatedAvailableDays,
+                          selectedDay,
+                        ].sort(
+                          (a, b) =>
+                            Object.values(DaysOfWeek).indexOf(a) -
+                            Object.values(DaysOfWeek).indexOf(b)
+                        );
+                      }
+
+                      // Remove the newly selected day
+                      updatedAvailableDays = updatedAvailableDays.filter(
+                        (d) => d !== day
+                      );
+
+                      // Update state
+                      setAvailableDays(updatedAvailableDays);
                       setSelectedDay(day);
-                      setAvailableDays(availableDays.filter((d) => d !== day));
                     }}
                     style={styles.dayButton}
                   >
