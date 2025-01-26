@@ -14,6 +14,7 @@ import { DaysOfWeek } from "../../utils/days-week-enum.utils.js";
 import LessonServiceInterface from "./ILesson.service.js";
 import compareTime from "../../utils/compare-hours.utils.js";
 import { createCustomLogger } from "../../etc/logger.etc.js";
+import Student from "../../dto/student/student.dto.js";
 
 // Initialize logger
 const logger = createCustomLogger({
@@ -102,12 +103,33 @@ export default class LessonService implements LessonServiceInterface {
         );
       }
 
-      logger.info("Checking for overlapping lessons.");
-      const exisitngLessons = await this.getLessonsOfInstrucorByDay(
+      logger.info(
+        `Checking for overlapping lessons for the instructor ${instructorData.instructorId}.`
+      );
+      const exisitngLessonsOfInstructor = await this.getLessonsOfInstrucorByDay(
         instructorData.instructorId!,
         lessonData.startAndEndTime.endTime
       );
-      this.validateOverlappingLessons(lessonData, exisitngLessons);
+      this.validateOverlappingLessonsForInstructor(
+        lessonData,
+        exisitngLessonsOfInstructor
+      );
+
+      logger.info(
+        `Fetcing any exisitng lessons for checking appearnce of any students of the new lesson within them.`
+      );
+      const lowerBoundTime = new Date(lessonData.startAndEndTime.startTime);
+      lowerBoundTime.setHours(lowerBoundTime.getHours() - 1);
+      const upperBoundTime = new Date(lessonData.startAndEndTime.endTime);
+      upperBoundTime.setHours(upperBoundTime.getHours() + 1);
+      const existingLessonsInTimeRange: Lesson[] =
+        await this.getAllLessonsWithinRange(lowerBoundTime, upperBoundTime);
+
+      this.validateOverlappingLessonsForStudents(
+        lessonData,
+        existingLessonsInTimeRange
+      );
+
       const lesson: Lesson = new Lesson(
         null, // lessonId will be assigned by the database
         lessonData.typeLesson,
@@ -271,11 +293,32 @@ export default class LessonService implements LessonServiceInterface {
           }`
         );
 
-      const exisitngLessons = await this.getLessonsOfInstrucorByDay(
+      logger.info(
+        `Checking for overlapping lessons for the instructor ${instructorData.instructorId}.`
+      );
+      const exisitngLessonsOfInstructor = await this.getLessonsOfInstrucorByDay(
         instructorData.instructorId!,
         lessonData.startAndEndTime.endTime
       );
-      this.validateOverlappingLessons(lessonData, exisitngLessons);
+      this.validateOverlappingLessonsForInstructor(
+        lessonData,
+        exisitngLessonsOfInstructor
+      );
+
+      logger.info(
+        `Fetcing any exisitng lessons for checking appearnce of any students of the new lesson within them.`
+      );
+      const lowerBoundTime = new Date(lessonData.startAndEndTime.startTime);
+      lowerBoundTime.setHours(lowerBoundTime.getHours() - 1);
+      const upperBoundTime = new Date(lessonData.startAndEndTime.endTime);
+      upperBoundTime.setHours(upperBoundTime.getHours() + 1);
+      const existingLessonsInTimeRange: Lesson[] =
+        await this.getAllLessonsWithinRange(lowerBoundTime, upperBoundTime);
+
+      this.validateOverlappingLessonsForStudents(
+        lessonData,
+        existingLessonsInTimeRange
+      );
 
       const updatedLesson: Lesson = {
         instructorId: lessonData.instructorId,
@@ -424,12 +467,21 @@ export default class LessonService implements LessonServiceInterface {
     }
 
     lessonData.students.map((student) => {
-      // if (lessonData.typeLesson !== student.lessonType) {
-      //   throw new createHttpError.BadRequest(
-      //     `The student must take the same type of lesson, student chose ${student.lessonType} while the lesson is ${lessonData.typeLesson}`
-      //   );
-      // }
+      if (student.name.length === 0) {
+        logger.warn(`A student has illegal name, which must be not empty`);
+        throw new createHttpError.BadRequest(
+          `A student has illegal name, which must be not empty`
+        );
+      }
 
+      if (student.phoneNumber.length !== 10) {
+        logger.warn(
+          `The student ${student.name} has illegal phone number that must be 10 digits long`
+        );
+        throw new createHttpError.BadRequest(
+          `The student ${student.name} has illegal phone number that must be 10 digits long`
+        );
+      }
       if (
         !student.preferences.every((preference) =>
           lessonData.specialties.includes(preference)
@@ -447,12 +499,12 @@ export default class LessonService implements LessonServiceInterface {
   };
 
   /**
-   * Validates that the new lesson does not overlap with existing lessons.
-   * @param targetLesson - The new lesson being created.
+   * Validates that the new lesson does not overlap with existing lessons of certain instructor.
+   * @param targetLesson - The lesson being created/updated.
    * @param arrExistingLessons - Array of existing lessons to compare against.
    * @throws {BadRequest} If overlapping lessons are found.
    */
-  validateOverlappingLessons = (
+  validateOverlappingLessonsForInstructor = (
     targetLesson: Lesson | NewLesson,
     arrExistingLessons: Lesson[]
   ) => {
@@ -483,5 +535,54 @@ export default class LessonService implements LessonServiceInterface {
         );
       }
     }
+  };
+
+  /**
+   * Validates that the new lesson or exisitng lesson does not overlap with existing students in other available lessons.
+   * @param targetLesson - The lesson being created/updated.
+   * @param arrExistingLessons - Array of existing lessons to compare against.
+   * @throws {BadRequest} If overlapping lessons are found.
+   */
+  validateOverlappingLessonsForStudents = (
+    targetLesson: Lesson | NewLesson,
+    arrExistingLessons: Lesson[]
+  ) => {
+    const targetStudentArr: Student[] = targetLesson.students;
+    const targetStart = targetLesson.startAndEndTime.startTime;
+    const targetEnd = targetLesson.startAndEndTime.endTime;
+    arrExistingLessons.map((existingLesson: Lesson) => {
+      // Check if the time ranges overlap using compareTime
+      const existingStart = existingLesson.startAndEndTime.startTime;
+      const existingEnd = existingLesson.startAndEndTime.endTime;
+
+      const startComparison = compareTime(targetStart, existingEnd);
+      const endComparison = compareTime(targetEnd, existingStart);
+
+      const isOverlapping = startComparison < 0 && endComparison > 0;
+
+      if (isOverlapping) {
+        // Check if the targetLesson is a Lesson and if it's the same lesson
+        // Determine if we need to skip comparison for the same lesson
+        if (
+          "lessonId" in targetLesson &&
+          targetLesson.lessonId === existingLesson.lessonId
+        ) {
+          return; // Skip comparison for the same lesson
+        }
+        // Check if any student in targetLesson has the same phone number as a student in existingLesson
+        const hasDuplicatePhoneNumber = targetStudentArr.some((targetStudent) =>
+          existingLesson.students.some(
+            (existingStudent) =>
+              existingStudent.phoneNumber === targetStudent.phoneNumber
+          )
+        );
+
+        if (hasDuplicatePhoneNumber) {
+          throw new createHttpError.BadRequest(
+            "One or more students in the target lesson have the same phone number as a student in an overlapping lesson."
+          );
+        }
+      }
+    });
   };
 }
