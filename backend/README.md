@@ -1,139 +1,108 @@
-# Backend Project
+# Swimming Pool Orgenizer Backend
 
-This is a Node.js backend application configured with TypeScript, Mongoose, and Express. It supports both development and production environments and can be run standalone or using Docker.
+This directory contains the backend server application for the Swimming Club Back Office System.
+
+---
 
 ## Features
 
-- TypeScript support.
-- Environment-based configurations.
-- Swagger for API documentation.
-- Logging with Winston.
-- MongoDB as the database.
-- Docker support.
+- RESTful API for managing instructors, lessons, and trainees.
+- MongoDB as the database for storing persistent data.
+- Middleware for validation and logging.
+- Dockerized for consistent deployment.
 
 ---
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (version 14 or above)
-- [MongoDB](https://www.mongodb.com/) (ensure it's running locally or use a hosted solution)
-- [Docker](https://www.docker.com/) (if you wish to use Docker)
+- **Node.js** (>= 16.x)
+- **Docker**
+- **MongoDB**
 
 ---
 
-## Installation
+## Setup Instructions
 
-1. Clone the repository:
+### Install Dependencies
+
+1. Navigate to the backend directory:
 
    ```bash
-   git clone <repository-url>
    cd backend
    ```
 
-2. Install dependencies:
+2. Install Node.js dependencies:
    ```bash
    npm install
    ```
 
----
+### Run the Application
 
-## Environment Configuration
-
-Use `dotenv-flow` for managing environment variables. Create `.env` files for each environment:
-
-- `.env` (default)
-- `.env.dev` (development)
-- `.env.prod` (production)
-
-Example `.env` file:
-
-```
-PORT=3000
-MONGO_URI=mongodb://localhost:27017/my_database
-```
-
----
-
-## Running the Project
-
-### Development
+#### Development
 
 ```bash
 npm run dev
 ```
 
-This runs the project in development mode with:
-
-- TypeScript in watch mode.
-- Nodemon for hot reloading.
-- Local MongoDB instance.
-
-### Production
+#### Production
 
 ```bash
-npm run build
-npm run prod
+npm run build && npm run prod
 ```
 
-This compiles TypeScript into JavaScript and starts the server.
-
----
-
-## Running with Docker
-
-### Development Mode
+#### Docker
 
 ```bash
-npm run dev-docker
+docker-compose up --build
 ```
 
-Ensure you have a `docker-compose` file for the MongoDB service.
-
-### Production Mode
+### Run Tests
 
 ```bash
-npm run prod-docker
-```
-
-This runs the application in production mode within a Docker container.
-
----
-
-## Swagger API Documentation
-
-The project includes Swagger for API documentation only for development mode. Access it at:
-
-```
-http://localhost:<PORT>/api-docs
+npm run test
 ```
 
 ---
 
-## Scripts
+## API Endpoints
 
-- `npm run build`: Compiles TypeScript files into JavaScript.
-- `npm run dev`: Starts the server in development mode.
-- `npm run prod`: Starts the server in production mode.
-- `npm run dev-docker`: Starts the server in development mode within Docker.
-- `npm run prod-docker`: Starts the server in production mode within Docker.
+### Instructor Routes
 
----
+- **POST `/instructor`**: Add a new instructor.
+- **GET `/instructor`**: Retrieve all instructors.
+- **GET `/instructor/single/:id`**: Retrieve a single instructor by ID.
+- **PUT `/instructor/:id`**: Update an instructor.
+- **DELETE `/instructor/:id`**: Delete an instructor by ID.
 
-## Dependencies
+### Lesson Routes
 
-- `express`: Web framework for building APIs.
-- `mongoose`: MongoDB object modeling.
-- `swagger-jsdoc` and `swagger-ui-express`: API documentation.
-- `winston`: Logging library.
-
-## DevDependencies
-
-- `typescript`: TypeScript support.
-- `nodemon`: Automatically restarts the server on file changes.
-- `dotenv-cli`: CLI for managing environment variables.
+- **POST `/lesson`**: Create a new lesson.
+- **GET `/lesson/:id`**: Retrieve a single lesson by ID.
+- **GET `/lesson`**: Retrieve lessons within a date range.
+- **PUT `/lesson/:id`**: Update a lesson.
+- **DELETE `/lesson/:id`**: Delete a lesson by ID.
 
 ---
 
-## License
+## File Structure
 
-This project is licensed under the ISC License.
+```plaintext
+backend/
+├── src/
+│   ├── controller/    # API controllers
+│   ├── dto/           # Data transfer objects
+│   ├── etc/           # Configuration files
+│   ├── model/         # Database schemas
+│   ├── repository/    # Database interaction logic
+│   ├── route/         # API route definitions
+│   ├── service/       # Business logic
+│   ├── utils/         # Utility functions and middleware
+│   ├── app.ts         # Express application setup
+│   └── server.ts      # Application entry point
+├── test/              # Unit and integration tests
+├── Dockerfile         # Docker configuration
+├── docker-compose.yml # Docker Compose configuration
+└── package.json       # Project metadata and dependencies
+```
+
+**NOTE: The code needs a _.env_ file for running it, please contact [shovalshabi\@gmail.com](mailto:shovalshabi@gmail.com?subject=Request%20for%20ENV%20files) for the _.env_ files**
