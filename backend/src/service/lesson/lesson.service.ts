@@ -466,6 +466,26 @@ export default class LessonService implements LessonServiceInterface {
       );
     }
 
+    if (
+      lessonData.students.length !== 1 &&
+      lessonData.typeLesson === LessonType.PRIVATE
+    ) {
+      throw new createHttpError.BadRequest(
+        "Private lesson must contain only sole student."
+      );
+    }
+
+    const phoneNumbers = lessonData.students.map(
+      (student) => student.phoneNumber
+    );
+    const uniquePhoneNumbers = new Set(phoneNumbers);
+
+    if (phoneNumbers.length !== uniquePhoneNumbers.size) {
+      throw new createHttpError.BadRequest(
+        "Duplicate students with the same phone number are not allowed."
+      );
+    }
+
     lessonData.students.map((student) => {
       if (student.name.length === 0) {
         logger.warn(`A student has illegal name, which must be not empty`);
@@ -473,15 +493,24 @@ export default class LessonService implements LessonServiceInterface {
           `A student has illegal name, which must be not empty`
         );
       }
+      if (student.preferences.length === 0) {
+        throw new createHttpError.BadRequest(
+          "Every student's preferences must be at least one of the specialties that are being taught in the lesson."
+        );
+      }
 
-      if (student.phoneNumber.length !== 10) {
+      if (
+        student.phoneNumber.length !== 10 ||
+        !/^\d+$/.test(student.phoneNumber)
+      ) {
         logger.warn(
-          `The student ${student.name} has illegal phone number that must be 10 digits long`
+          `The student ${student.name} has illegal phone number that must be 10 digits long and must contain only numbers`
         );
         throw new createHttpError.BadRequest(
           `The student ${student.name} has illegal phone number that must be 10 digits long`
         );
       }
+
       if (
         !student.preferences.every((preference) =>
           lessonData.specialties.includes(preference)
