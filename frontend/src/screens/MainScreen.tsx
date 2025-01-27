@@ -5,6 +5,16 @@ import CustomCard from "../components/Card";
 // Get the screen dimensions
 const { width, height } = Dimensions.get("window");
 
+/**
+ * MainScreen Component
+ *
+ * A functional component representing the main screen of the application, which provides navigation to the Instructor Editor and Calendar screens.
+ *
+ * @component
+ * @param {Object} props - The props for the MainScreen component.
+ * @param {Object} props.navigation - The navigation object for navigating between screens.
+ * @returns {JSX.Element} The rendered MainScreen component.
+ */
 const MainScreen: React.FC<{ navigation: any }> = ({ navigation }) => (
   <View style={styles.container}>
     <Text style={styles.title}>SplashOps</Text>
@@ -25,6 +35,9 @@ const MainScreen: React.FC<{ navigation: any }> = ({ navigation }) => (
   </View>
 );
 
+/**
+ * Styles for the MainScreen component.
+ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

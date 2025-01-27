@@ -1,6 +1,12 @@
-// import { PaletteMode } from "@mui/material";
-
-interface ColorTokens {
+/**
+ * ColorTokens Interface
+ * Defines the structure for color tokens used throughout the application.
+ *
+ * @interface ColorTokens
+ * @property {Object} grey - Shades of grey mapped to numerical keys.
+ * @property {Object} primary - Shades of primary colors mapped to numerical keys.
+ */
+export interface ColorTokens {
   grey: {
     [key: number]: string;
   };
@@ -9,6 +15,13 @@ interface ColorTokens {
   };
 }
 
+/**
+ * `colorTokens`
+ * Provides the primary and grey color shades for light and dark themes.
+ *
+ * @constant
+ * @type {ColorTokens}
+ */
 export const colorTokens: ColorTokens = {
   grey: {
     0: "#FFFFFF",
@@ -39,6 +52,14 @@ export const colorTokens: ColorTokens = {
   },
 };
 
+/**
+ * ThemeSettings Interface
+ * Defines the structure for theme settings used in the application.
+ *
+ * @interface ThemeSettings
+ * @property {Object} palette - Theme color configurations including primary, neutral, and background colors.
+ * @property {Object} typography - Font family and sizes for various text elements.
+ */
 export interface ThemeSettings {
   palette: {
     mode: string;
@@ -89,6 +110,14 @@ export interface ThemeSettings {
   };
 }
 
+/**
+ * `themeSettings`
+ * Function that generates theme settings based on the specified mode (light or dark).
+ *
+ * @function
+ * @param {string} mode - The mode of the theme ('light' or 'dark').
+ * @returns {Object} - Theme configuration object adhering to the `ThemeSettings` interface.
+ */
 export const themeSettings = (mode: string): object => {
   return {
     palette: {

@@ -27,6 +27,13 @@ import useAlert from "../hooks/useAlert";
 
 const { width, height } = Dimensions.get("window");
 
+/**
+ * Retrieves the start and end dates for a week based on the offset.
+ *
+ * @function getWeekDates
+ * @param {number} offset - The week offset from the current week (e.g., 0 for the current week, -7 for the previous week).
+ * @returns {Date[]} An array of dates representing the week.
+ */
 const getWeekDates = (offset: number) => {
   const today = new Date();
   const currentDay = today.getDay();
@@ -40,6 +47,15 @@ const getWeekDates = (offset: number) => {
   });
 };
 
+/**
+ * CalendarScreen Component
+ *
+ * This component provides a weekly calendar view where users can manage lessons.
+ * It supports adding, updating, and deleting lessons, selecting instructors, and setting lesson details.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered CalendarScreen component.
+ */
 const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{
@@ -80,6 +96,11 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const weekDates = getWeekDates(currentWeekOffset);
 
+  /**
+   * Fetches lessons for the selected week and updates the state.
+   *
+   * @function fetchLessons
+   */
   const fetchLessons = async () => {
     const start = weekDates[0];
     //Retriving lesssons from sunday 6:00 in the morining until 00:00 till saturday
@@ -114,6 +135,14 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  /**
+   * Fetches available instructors for a given day and time range.
+   *
+   * @function fetchAvailableInstructors
+   * @param {number} day - The day of the week (0-Sunday, 6-Saturday).
+   * @param {Date} startTime - The start time for the availability check.
+   * @param {Date} endTime - The end time for the availability check.
+   */
   const fetchAvailableInstructors = async (
     day: number,
     startTime: Date,
@@ -140,6 +169,12 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       }
     }
   };
+
+  /**
+   * Clears all input fields and resets state values.
+   *
+   * @function clearFields
+   */
   const clearFields = () => {
     setModalAnchor(false);
     setAvailableSpecialties([]);
@@ -155,6 +190,13 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setStudnetSpecialties([]);
     setLessonType(LessonType.PUBLIC);
   };
+
+  /**
+   * Selects an instructor for the lesson and updates the state.
+   *
+   * @function handleChooseInstructor
+   * @param {Instructor} instructor - The selected instructor.
+   */
   const handleChooseInstructor = (instructor: Instructor) => {
     if (!instructor) {
       console.error("Cannot choose a null or undefined instructor");
@@ -177,6 +219,11 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setSpecialties([]);
   };
 
+  /**
+   * Removes the selected instructor and updates the state.
+   *
+   * @function handleRemoveInstructor
+   */
   const handleRemoveInstructor = () => {
     setModalAnchor(false);
     if (selectedInstructor) {
@@ -186,6 +233,11 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setAvailableSpecialties([]);
   };
 
+  /**
+   * Removes the currently selected lesson and resets relevant state values.
+   *
+   * @function handleRemoveSelectedLesson
+   */
   const handleRemoveSelectedLesson = () => {
     if (selectedInstructor) {
       handleRemoveInstructor();
@@ -205,11 +257,23 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setSelectedLesson(null);
   };
 
+  /**
+   * Removes a specialty from the lesson's specialties list.
+   *
+   * @function handleRemoveSpecialtyFromLesson
+   * @param {Swimming} specialty - The specialty to remove.
+   */
   const handleRemoveSpecialtyFromLesson = (specialty: Swimming) => {
     setAvailableSpecialties([...availableSpecialties, specialty]);
     setSpecialties(specialties.filter((s) => s !== specialty));
   };
 
+  /**
+   * Adds a specialty to the lesson's specialties list.
+   *
+   * @function handleAddSpecialtyToLesson
+   * @param {Swimming} specialty - The specialty to add.
+   */
   const handleAddSpecialtyToLesson = (specialty: Swimming) => {
     setAvailableSpecialties(
       availableSpecialties.filter((s) => s !== specialty)
@@ -217,15 +281,31 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setSpecialties([...specialties, specialty]);
   };
 
+  /**
+   * Updates the lesson type.
+   *
+   * @function handleChooseLessonType
+   * @param {string} value - The selected lesson type.
+   */
   const handleChooseLessonType = (value: string) => {
     setLessonType(value as LessonType);
   };
 
+  /**
+   * Removes the start and end time for the lesson.
+   *
+   * @function handleRemoveStartAndEndTime
+   */
   const handleRemoveStartAndEndTime = () => {
     setStartHourAndDate(null);
     setEndHourAndDate(null);
   };
 
+  /**
+   * Adds a student to the lesson.
+   *
+   * @function handleAddStudent
+   */
   const handleAddStudent = () => {
     if (studentName && studnetSpecialties.length > 0 && studentPhoneNumber) {
       const student: Student = new Student(
@@ -242,6 +322,12 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     showAlert("Student must have name, phone number and prefences");
   };
 
+  /**
+   * Toggles the selection of a specialty for a student.
+   *
+   * @function toggleSpecialtySelection
+   * @param {Swimming} specialty - The specialty to toggle.
+   */
   const toggleSpecialtySelection = (specialty: Swimming) => {
     setStudnetSpecialties((prevSpecialties) => {
       if (prevSpecialties.includes(specialty)) {
@@ -252,6 +338,12 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     });
   };
 
+  /**
+   * Removes a student from the lesson by index.
+   *
+   * @function handleRemoveStudent
+   * @param {number} indexToRemove - The index of the student to remove.
+   */
   const handleRemoveStudent = (indexToRemove: number) => {
     const newArray = studentsArr.filter((_, index) => index !== indexToRemove);
     setStudentsArr(newArray);
@@ -261,16 +353,32 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     fetchLessons();
   }, [currentWeekOffset]);
 
+  /**
+   * Toggles the add new lesson section.
+   *
+   * @function toggleAddLessonSection
+   */
   const toggleAddLessonSection = () => {
     setAddNewLessonSection(addNewLessonSection ? false : true);
     handleRemoveSelectedLesson();
     setEditLessonSection(false);
   };
+
+  /**
+   * Toggles the edit lesson section.
+   *
+   * @function toggleEditLessonSection
+   */
   const toggleEditLessonSection = () => {
     setEditLessonSection(editLessonSection ? false : true);
     setAddNewLessonSection(false);
   };
 
+  /**
+   * Creates a new lesson and updates the state.
+   *
+   * @function handleCreateLesson
+   */
   const handleCreateLesson = async () => {
     // Validation based on lessonType
 
@@ -352,6 +460,11 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  /**
+   * Updates an existing lesson and updates the state.
+   *
+   * @function handleUpdateLesson
+   */
   const handleUpdateLesson = async () => {
     if (selectedLesson) {
       if (startHourAndDate && endHourAndDate) {
@@ -420,6 +533,11 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  /**
+   * Deletes a selected lesson.
+   *
+   * @function handleDeleteLesson
+   */
   const handleDeleteLesson = () => {
     if (selectedLesson) {
       if (selectedLesson.lessonId) {
@@ -450,6 +568,14 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  /**
+   * Handles cell press events, fetching available instructors and updating state.
+   *
+   * @function handleCellPress
+   * @param {string} day - The day of the week.
+   * @param {string} hour - The hour of the day.
+   * @param {Date} date - The selected date.
+   */
   const handleCellPress = async (day: string, hour: string, date: Date) => {
     const cellLessons = lessons.filter((lesson) => {
       const lessonDate = new Date(lesson.startAndEndTime.startTime);
@@ -469,7 +595,18 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setModalVisible(true);
   };
 
+  /**
+   * Navigates to the previous week in the calendar.
+   *
+   * @function goToPreviousWeek
+   */
   const goToPreviousWeek = () => setCurrentWeekOffset((prev) => prev - 7);
+
+  /**
+   * Navigates to the next week in the calendar.
+   *
+   * @function goToNextWeek
+   */
   const goToNextWeek = () => setCurrentWeekOffset((prev) => prev + 7);
 
   const today = new Date();

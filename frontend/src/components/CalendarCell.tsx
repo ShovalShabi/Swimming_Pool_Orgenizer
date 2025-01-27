@@ -1,13 +1,36 @@
+/**
+ * CalendarCell Component
+ *
+ * A reusable component that represents a cell in a calendar, displaying information about lessons for a specific time slot.
+ *
+ * @param {boolean} isHighlighted - Determines if the cell is highlighted (e.g., the current hour).
+ * @param {Lesson[]} cellLessons - An array of lessons scheduled for the specific time slot represented by this cell.
+ * @param {() => void} onPress - A callback function triggered when the cell is pressed.
+ */
+
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import Lesson from "../dto/lesson/lesson.dto";
 
+// Props interface for the CalendarCell component
 interface Props {
+  /**
+   * Indicates whether the cell is highlighted (e.g., current time slot).
+   */
   isHighlighted: boolean;
+
+  /**
+   * Array of lessons scheduled for the time slot this cell represents.
+   */
   cellLessons: Lesson[];
+
+  /**
+   * Callback function to handle cell press events.
+   */
   onPress: () => void;
 }
 
+// CalendarCell functional component
 const CalendarCell: React.FC<Props> = ({
   isHighlighted,
   cellLessons,
@@ -21,11 +44,14 @@ const CalendarCell: React.FC<Props> = ({
     ]}
     onPress={onPress}
   >
+    {/* Display a notification badge if there are 3 or more lessons */}
     {cellLessons.length >= 3 && (
       <View style={styles.notification}>
         <Text style={styles.notificationText}>{cellLessons.length}</Text>
       </View>
     )}
+
+    {/* Display details of each lesson if there are fewer than 3 lessons */}
     {cellLessons.length < 3 && (
       <View style={styles.lessonContent}>
         {cellLessons.map((lesson, index) => (
@@ -43,6 +69,7 @@ const CalendarCell: React.FC<Props> = ({
   </TouchableOpacity>
 );
 
+// Styles for the CalendarCell component
 const styles = StyleSheet.create({
   cell: {
     borderWidth: 1,

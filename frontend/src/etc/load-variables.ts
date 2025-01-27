@@ -25,9 +25,9 @@ const getEnvVariables = () => {
   const env = EXPO_ENV || "dev"; // Default to 'dev' if EXPO_ENV is not defined
 
   if (env === "dev") {
-    backendPort = parseInt(EXPO_BCAKEND_SERVER_DEV_PORT || "6001", 10); // Default to 6002 if EXPO_PORT is not defined
+    backendPort = parseInt(EXPO_BCAKEND_SERVER_DEV_PORT || "6001", 10); // Default to 6001 if EXPO_BCAKEND_SERVER_DEV_PORT is not defined
   } else if (env === "prod") {
-    backendPort = parseInt(EXPO_BCAKEND_SERVER_PROD_PORT || "6000", 10); // Default to 7002 if EXPO_PORT is not defined
+    backendPort = parseInt(EXPO_BCAKEND_SERVER_PROD_PORT || "6000", 10); // Default to 6000 if EXPO_BCAKEND_SERVER_PROD_PORT is not defined
   } else {
     // Testing the application, using the services in dev mode, port will remain 0
   }

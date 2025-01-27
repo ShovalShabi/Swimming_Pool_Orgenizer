@@ -23,6 +23,15 @@ import useAlert from "../hooks/useAlert";
 
 const { width, height } = Dimensions.get("window");
 
+/**
+ * InstructorScreen Component
+ *
+ * This React functional component provides a user interface for managing instructors.
+ * It allows users to add, update, and delete instructors and configure their specialties and availability.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered InstructorScreen component.
+ */
 const InstructorScreen: React.FC = () => {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -46,6 +55,11 @@ const InstructorScreen: React.FC = () => {
   const { showAlert } = useAlert();
 
   useEffect(() => {
+    /**
+     * Fetches the list of instructors from the service and updates the state.
+     *
+     * @function fetchInstructors
+     */
     const fetchInstructors = async () => {
       const data = await InstructorService.getAllInstructors();
       setInstructors(data);
@@ -53,6 +67,11 @@ const InstructorScreen: React.FC = () => {
     fetchInstructors();
   }, []);
 
+  /**
+   * Clears all input fields and resets state values.
+   *
+   * @function clearFields
+   */
   const clearFields = () => {
     setName("");
     setSelectedInstructor(null);
@@ -65,6 +84,12 @@ const InstructorScreen: React.FC = () => {
     setShowEndPicker(false);
   };
 
+  /**
+   * Adds a specialty to the instructor's list of specialties.
+   *
+   * @function handleAddSpecialty
+   * @param {Swimming} specialty - The specialty to add.
+   */
   const handleAddSpecialty = (specialty: Swimming) => {
     setSpecialties([...specialties, specialty]);
     setAvailableSpecialties(
@@ -72,11 +97,22 @@ const InstructorScreen: React.FC = () => {
     );
   };
 
+  /**
+   * Removes a specialty from the instructor's list of specialties.
+   *
+   * @function handleRemoveSpecialty
+   * @param {Swimming} specialty - The specialty to remove.
+   */
   const handleRemoveSpecialty = (specialty: Swimming) => {
     setSpecialties(specialties.filter((s) => s !== specialty));
     setAvailableSpecialties([...availableSpecialties, specialty]);
   };
 
+  /**
+   * Adds availability for a specific day, with start and end times.
+   *
+   * @function handleAddAvailability
+   */
   const handleAddAvailability = () => {
     if (selectedDay && startTime && endTime) {
       const dayIndex = Object.values(DaysOfWeek).indexOf(selectedDay);
@@ -94,6 +130,12 @@ const InstructorScreen: React.FC = () => {
     }
   };
 
+  /**
+   * Removes availability for a specific day.
+   *
+   * @function handleRemoveAvailability
+   * @param {number} dayIndex - The index of the day to remove availability for.
+   */
   const handleRemoveAvailability = (dayIndex: number) => {
     const updatedAvailabilities = [...availabilities];
     updatedAvailabilities[dayIndex] = -1;
@@ -109,6 +151,12 @@ const InstructorScreen: React.FC = () => {
     setAvailableDays(updatedAvailableDays);
   };
 
+  /**
+   * Validates the instructor data to ensure it meets the required criteria.
+   *
+   * @function checkIfValidInstructor
+   * @returns {boolean} True if the instructor data is valid, otherwise false.
+   */
   const checkIfValidInstructor = (): boolean => {
     if (!availabilities.some((availability) => availability !== -1)) {
       showAlert(
@@ -129,6 +177,11 @@ const InstructorScreen: React.FC = () => {
     return true;
   };
 
+  /**
+   * Saves the instructor data, either creating a new instructor or updating an existing one.
+   *
+   * @function handleSaveInstructor
+   */
   const handleSaveInstructor = async () => {
     if (selectedInstructor) {
       if (!checkIfValidInstructor()) return;
@@ -158,6 +211,11 @@ const InstructorScreen: React.FC = () => {
     setModalVisible(false);
   };
 
+  /**
+   * Deletes the selected instructor from the database.
+   *
+   * @function handleDeleteInstructor
+   */
   const handleDeleteInstructor = async () => {
     if (selectedInstructor?.instructorId) {
       await InstructorService.deleteInstructorById(
