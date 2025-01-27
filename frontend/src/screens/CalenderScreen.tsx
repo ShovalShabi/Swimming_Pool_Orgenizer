@@ -160,12 +160,18 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       console.error("Cannot choose a null or undefined instructor");
       return;
     }
+
+    // Return the currently selected instructor to the availableInstructors list
+    if (selectedInstructor) {
+      setAvailableInstructors((prev) => [...prev, selectedInstructor]);
+      setSelectedInstructor(null);
+    }
+
+    // Update state with the new instructor
     setModalAnchor(true);
     setSelectedInstructor(instructor);
-    setAvailableInstructors(
-      availableInstructors.filter(
-        (ins) => ins.instructorId !== instructor.instructorId
-      )
+    setAvailableInstructors((prev) =>
+      prev.filter((ins) => ins.instructorId !== instructor.instructorId)
     );
     setAvailableSpecialties(instructor.specialties);
     setSpecialties([]);
@@ -302,68 +308,6 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       showAlert("You cannot create lessons in past.", "Error");
       return;
     }
-    // Calculate the duration in minutes
-    const durationInMinutes =
-      (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-
-    if (lessonType === LessonType.PRIVATE && durationInMinutes !== 45) {
-      showAlert("Private lessons must be exactly 45 minutes.", "Error");
-      return;
-    }
-
-    if (lessonType === LessonType.PRIVATE && studentsArr.length !== 1) {
-      showAlert("There is must be one student for private lesson.", "Error");
-      return;
-    }
-
-    if (
-      (lessonType === LessonType.PUBLIC || lessonType === LessonType.MIXED) &&
-      durationInMinutes !== 60
-    ) {
-      showAlert(
-        "Public and Mixed lessons must be exactly 60 minutes.",
-        "Error"
-      );
-      return;
-    }
-
-    if (studentsArr.length < 1 && lessonType != LessonType.PRIVATE) {
-      showAlert(
-        "There is must be at lease one student for mixed/public lesson.",
-        "Error"
-      );
-      return;
-    }
-
-    if (!specialties.length) {
-      showAlert("A lesson must contain swimming styles.", "Error");
-      return;
-    }
-
-    if (
-      !studentsArr.every((student) =>
-        student.preferences.every((preference) =>
-          specialties.includes(preference)
-        )
-      )
-    ) {
-      showAlert(
-        "Every student's preferences must match the specialties taught in the lesson.",
-        "Error"
-      );
-      return;
-    }
-
-    // Validation for each student's preferences
-    for (const student of studentsArr) {
-      if (student.preferences.length === 0) {
-        showAlert(
-          "Every student's preferences must be at least one of the specialties that are being taught in the lesson.",
-          "Error"
-        );
-        return; // Exits the entire method
-      }
-    }
 
     // Compose start and end date using the selected cell date and times
     const start = new Date(selectedCell.date);
@@ -423,86 +367,19 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         endTime.setSeconds(endHourAndDate.getSeconds());
         endTime.setMilliseconds(0); // Clear milliseconds for accuracy
 
+        if (!selectedInstructor) {
+          showAlert("A lesson must have certified instructor to teach it.");
+          return;
+        }
+
         const updatedLesson = new Lesson(
           selectedLesson.lessonId,
           lessonType,
           specialties,
-          selectedLesson.instructorId,
+          selectedInstructor.instructorId!,
           new StartAndEndTime(startTime, endTime),
           studentsArr
         );
-
-        // Calculate the duration in minutes
-        const durationInMinutes =
-          (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-
-        if (new Date() > endTime) {
-          showAlert("You cannot edit lessons that already done.", "Error");
-          return;
-        }
-
-        // Validation based on lessonType
-        if (lessonType === LessonType.PRIVATE && durationInMinutes !== 45) {
-          showAlert("Private lessons must be exactly 45 minutes.", "Error");
-          return;
-        }
-
-        if (lessonType === LessonType.PRIVATE && studentsArr.length !== 1) {
-          showAlert(
-            "There is must be one student for private lesson.",
-            "Error"
-          );
-          return;
-        }
-
-        if (
-          (lessonType === LessonType.PUBLIC ||
-            lessonType === LessonType.MIXED) &&
-          durationInMinutes !== 60
-        ) {
-          showAlert(
-            "Public and Mixed lessons must be exactly 60 minutes.",
-            "Error"
-          );
-          return;
-        }
-
-        if (studentsArr.length < 1 && lessonType !== LessonType.PRIVATE) {
-          showAlert(
-            "There is must be at lease one student for mixed/public lesson.",
-            "Error"
-          );
-          return;
-        }
-
-        if (!updatedLesson.specialties.length) {
-          showAlert("A lesson must contain swimming styles.", "Error");
-          return;
-        }
-
-        if (
-          !studentsArr.every((student) =>
-            student.preferences.every((preference) =>
-              specialties.includes(preference)
-            )
-          )
-        ) {
-          showAlert(
-            "Every student's preferences must match the specialties taught in the lesson.",
-            "Error"
-          );
-          return;
-        }
-        // Validation for each student's preferences
-        for (const student of studentsArr) {
-          if (student.preferences.length === 0) {
-            showAlert(
-              "Every student's preferences must be at least one of the specialties that are being taught in the lesson.",
-              "Error"
-            );
-            return; // Exits the entire method
-          }
-        }
 
         try {
           if (selectedLesson.lessonId) {
@@ -535,14 +412,10 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             // Handle non-Axios errors
             showAlert("An unexpected error occurred.", "Error");
           }
+          return;
         }
         console.log("the lesson ID for update is not defined");
       }
-      console.log(
-        "start hour and end hour are not valid",
-        startHourAndDate,
-        endHourAndDate
-      );
       showAlert("Start hour and end hour are not valid", "Error");
     }
   };
@@ -705,26 +578,71 @@ const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                             }
                             setAddNewLessonSection(false); // the add section should be active
 
-                            const selected = availableInstructors.find(
+                            // Return the currently selected instructor to the available list
+                            if (selectedInstructor) {
+                              // Use the previous state directly in the callback
+                              setAvailableInstructors((prevInstructors) => {
+                                const updatedInstructors = [
+                                  ...prevInstructors,
+                                  selectedInstructor,
+                                ];
+                                return updatedInstructors;
+                              });
+
+                              setSelectedInstructor(null); // Clear the selected instructor
+                            }
+
+                            // Delay fetching the selected instructor from updated availableInstructors
+                            setAvailableInstructors((prev) => {
+                              const selected = prev.find(
+                                (inst) =>
+                                  inst.instructorId === lesson.instructorId
+                              );
+
+                              if (selected) {
+                                setSelectedInstructor(selected);
+
+                                // Remove the selected instructor from the available list
+                                const filteredInstructors = prev.filter(
+                                  (inst) =>
+                                    inst.instructorId !== lesson.instructorId
+                                );
+
+                                return filteredInstructors;
+                              }
+
+                              return prev;
+                            });
+
+                            // Find the new instructor associated with the lesson
+                            const newInstructor = availableInstructors.find(
                               (inst) =>
                                 inst.instructorId === lesson.instructorId
                             );
 
-                            setSelectedInstructor(selected || null);
-                            setAvailableInstructors((prev) =>
-                              prev.filter(
-                                (ins) =>
-                                  ins.instructorId !== lesson.instructorId
-                              )
-                            );
-                            if (selected) {
-                              // In this code block we rendering back the specialties that are exisitng at the exisitng lesson and substructing them from the available specialrties of the instructor
+                            if (newInstructor) {
+                              setSelectedInstructor(newInstructor);
+
+                              // Update availableInstructors to remove the selected instructor
+                              setAvailableInstructors((prevInstructors) =>
+                                prevInstructors.filter(
+                                  (inst) =>
+                                    inst.instructorId !==
+                                    newInstructor.instructorId
+                                )
+                              );
+
+                              // Update specialties and availableSpecialties based on the new instructor
                               setSpecialties([...lesson.specialties]);
                               setAvailableSpecialties(
-                                selected.specialties.filter(
+                                newInstructor.specialties.filter(
                                   (specialty) =>
                                     !lesson.specialties.includes(specialty)
                                 )
+                              );
+                            } else {
+                              console.log(
+                                "Instructor not found for the selected lesson."
                               );
                             }
 
