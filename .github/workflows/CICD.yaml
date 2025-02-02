@@ -9,7 +9,11 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *" # Runs at midnight UTC daily
+
+concurrency:
+  group: ci-cd-nightly
+  cancel-in-progress: false
 
 jobs:
   build-and-test:
@@ -55,8 +59,7 @@ jobs:
 
       # Step 6: Start MongoDB for Tests
       - name: Start MongoDB container
-        run: |
-          docker-compose up -d mongo-db
+        run: docker-compose up -d mongo-db
         working-directory: ./backend
 
       # Step 7: Wait for MongoDB to be ready
@@ -72,14 +75,12 @@ jobs:
 
       # Step 8: Install dependencies
       - name: Install dependencies
-        run: |
-          npm install
+        run: npm install
         working-directory: ./backend
 
       # Step 9: Run tests
       - name: Run tests
-        run: |
-          npm run test
+        run: npm run test
         working-directory: ./backend
         env:
           HOST_TYPE: localhost
@@ -89,8 +90,7 @@ jobs:
 
       # Step 10: Build the application
       - name: Build application
-        run: |
-          npm run build
+        run: npm run build
         working-directory: ./backend
 
   deploy:
@@ -122,8 +122,7 @@ jobs:
 
       # Step 5: Build and start Docker Compose services
       - name: Build and start Docker Compose services
-        run: |
-          docker-compose up --build -d
+        run: docker-compose up --build -d
         working-directory: ./backend
 
       # Step 6: Tag and push images to Docker Hub
@@ -142,8 +141,7 @@ jobs:
       # Step 7: Tear down Docker Compose
       - name: Tear Down Docker Compose
         if: always()
-        run: |
-          docker-compose down
+        run: docker-compose down
         working-directory: ./backend
 
       # Step 8: Output logs
@@ -155,7 +153,7 @@ jobs:
 
       # Step 9: Upload log file
       - name: Upload log file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deployment-logs
           path: ./backend/logs
